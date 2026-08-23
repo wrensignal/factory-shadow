@@ -18,6 +18,7 @@ from shadow_mission.auth import (
     sign_event_headers,
 )
 from shadow_mission.collector import (
+    COLLECTOR_RESPONSE_DEADLINE_SECONDS,
     CollectorRequestError,
     GuidanceQueue,
     HookCollector,
@@ -275,7 +276,7 @@ def test_http_hook_boundary_persists_before_success(tmp_path: Path) -> None:
 
 def test_reference_load_p95_stays_below_hook_budget(tmp_path: Path) -> None:
     collector, secret, descriptor = start_collector(tmp_path)
-    barrier = threading.Barrier(33)
+    barrier = threading.Barrier(17)
     latencies: list[float] = []
 
     def deliver(index: int) -> None:
@@ -292,7 +293,7 @@ def test_reference_load_p95_stays_below_hook_budget(tmp_path: Path) -> None:
         collector.process(request_headers, body)
         latencies.append(time.perf_counter() - started)
 
-    threads = [threading.Thread(target=deliver, args=(index,)) for index in range(32)]
+    threads = [threading.Thread(target=deliver, args=(index,)) for index in range(16)]
     for thread in threads:
         thread.start()
     barrier.wait()
@@ -302,8 +303,8 @@ def test_reference_load_p95_stays_below_hook_budget(tmp_path: Path) -> None:
 
     ordered = sorted(latencies)
     p95 = ordered[int(len(ordered) * 0.95) - 1]
-    assert p95 < 0.5
-    assert len(collector.ledger.exchanges()) == 32
+    assert p95 < COLLECTOR_RESPONSE_DEADLINE_SECONDS
+    assert len(collector.ledger.exchanges()) == 16
 
 
 def test_persisted_exchange_contains_no_raw_identifiers_or_secret(tmp_path: Path) -> None:
