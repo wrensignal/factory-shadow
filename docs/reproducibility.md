@@ -5,7 +5,7 @@ The public checks need no Factory account, credential, approval, model call, or 
 
 ## Evidence sources
 
-The GitHub release for `v0.1.0b3` publishes these evidence sources:
+The GitHub release for `v0.1.0b4` publishes these evidence sources:
 
 - `pair-summary-final.json` contains the frozen aggregate record;
 - `incomplete-pairs.json` records pairs 54 and 57;
@@ -29,7 +29,7 @@ The incomplete record SHA-256 is `84a13287bd07bae58fbb036b60e87c603195325f6c9760
 ```sh
 git clone https://github.com/WrenSignal/factory-shadow.git
 cd factory-shadow
-git checkout --detach v0.1.0b3
+git checkout --detach v0.1.0b4
 python3 -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check -e '.[dev]'
 ```
@@ -40,7 +40,7 @@ python3 -m venv .venv
 
 ```sh
 .venv/bin/python -m pytest tests/unit tests/integration
-.venv/bin/python ci/verify_release.py --tag v0.1.0b3
+.venv/bin/python ci/verify_release.py --tag v0.1.0b4
 ```
 
 These commands make no Factory, model, Lima, or paid Mission call.
@@ -56,7 +56,7 @@ The command exit status is the check result.
 ```sh
 .venv/bin/python -m build
 .venv/bin/python -m twine check dist/*
-.venv/bin/python ci/verify_release.py --tag v0.1.0b3 --dist dist
+.venv/bin/python ci/verify_release.py --tag v0.1.0b4 --dist dist
 
 WHEEL_VENV="$(mktemp -d)/venv"
 .venv/bin/python -m venv "$WHEEL_VENV"
@@ -73,19 +73,19 @@ It rejects unsafe archive paths, linked source members, private paths, and commo
 mkdir -p "$HOME/Downloads"
 
 curl -fL \
-  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b3/factory-shadow-proof-pairs-46-53.tar \
+  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b4/factory-shadow-proof-pairs-46-53.tar \
   -o "$HOME/Downloads/factory-shadow-proof-pairs-46-53.tar"
 
 curl -fL \
-  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b3/factory-shadow-proof-pair-55.tar \
+  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b4/factory-shadow-proof-pair-55.tar \
   -o "$HOME/Downloads/factory-shadow-proof-pair-55.tar"
 
 curl -fL \
-  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b3/pair-summary-final.json \
+  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b4/pair-summary-final.json \
   -o "$HOME/Downloads/pair-summary-final.json"
 
 curl -fL \
-  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b3/incomplete-pairs.json \
+  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b4/incomplete-pairs.json \
   -o "$HOME/Downloads/incomplete-pairs.json"
 ```
 
@@ -163,11 +163,12 @@ These commands use the official Factory Marketplace interface.
 They change the reviewer's Factory plugin state.
 
 ```sh
-droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b3'
-droid plugin install shadow-mission@factory-shadow --scope user
+droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b4'
+droid plugin install shadow-mission@factory-shadow@v0.1.0b4 --scope user
 ```
 
-The Marketplace name is `factory-shadow`.
+The catalog name is `factory-shadow`.
+The tagged registration ID is `factory-shadow@v0.1.0b4`.
 The plugin name is `shadow-mission`.
 The catalog source is the repository root.
 
@@ -184,7 +185,7 @@ It also needs the exact pinned Factory and Lima boundaries.
 `pyproject.toml` pins Droid SDK `0.2.0`.
 The files under `ops/lima/` pin Lima `2.2.0` and image digests.
 The Factory plugin and live protocol use the stable `0.1.0` base.
-The `0.1.0b3` Python distribution does not authorize a new live Mission.
+The `0.1.0b4` Python distribution does not authorize a new live Mission.
 A later live candidate must align every runtime and preflight binding before re-sealing.
 
 Do not copy a Factory credential into a repository or Mission checkout.
@@ -203,9 +204,9 @@ Its `apply` command requires a staged offline dry run before any canonical write
 Its `verify` command checks the public signature and receipt offline.
 
 The preview re-seal completed with request digest
-`0542850c2df5820abf794d6d86eda7cf73c4e662fbaf32ec341b0a04a42508ef`.
+`cff3475fd3ca57bb5d73f9ca4f33edc90916a2bdd6d25ae57d6f8114fe8814a7`.
 Its verified receipt digest is
-`134f054c7da7b5c117193e44323d5dab37b7ed794d6739f4620d79f95f55da0a`.
+`5769969d8694b010e32354af14ae4ec6b287e94fc4d82f041c1cc390a3b04121`.
 
 Never hand-edit the sealed fixture or regenerate its pin.
 Re-sealing consumes no live run.
