@@ -47,7 +47,7 @@ Add the tagged repository as a Factory Marketplace.
 Then install the `shadow-mission` plugin at user scope.
 
 ```sh
-droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b1'
+droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b2'
 droid plugin install shadow-mission@factory-shadow --scope user
 ```
 
@@ -56,7 +56,7 @@ Install the companion Python CLI from the same tag.
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install \
-  'git+https://github.com/WrenSignal/factory-shadow.git@v0.1.0b1'
+  'git+https://github.com/WrenSignal/factory-shadow.git@v0.1.0b2'
 .venv/bin/shadow --help
 ```
 
@@ -132,7 +132,7 @@ Read [Privacy](docs/privacy.md) and [Limitations](docs/limitations.md) before an
 python3 -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check -e '.[dev]'
 .venv/bin/python -m pytest tests/unit tests/integration
-.venv/bin/python ci/verify_release.py --tag v0.1.0b1
+.venv/bin/python ci/verify_release.py --tag v0.1.0b2
 ```
 
 These checks make no Factory or model call.

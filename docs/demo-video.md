@@ -1,6 +1,6 @@
 # Demonstration video script
 
-Record a short artifact walkthrough for the `v0.1.0b1` Guild preview.
+Record a short artifact walkthrough for the `v0.1.0b2` Guild preview.
 Use only the released source, aggregate record, and proof bundles.
 Do not stage a new intervention or type a result manually.
 
@@ -35,14 +35,14 @@ Narration:
 Show the repository URL and tag:
 
 - `https://github.com/WrenSignal/factory-shadow`;
-- `v0.1.0b1`.
+- `v0.1.0b2`.
 
 ## Factory installation
 
 Show these commands without running a paid Mission:
 
 ```sh
-droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b1'
+droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b2'
 droid plugin install shadow-mission@factory-shadow --scope user
 ```
 

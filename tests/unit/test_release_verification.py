@@ -27,16 +27,16 @@ def write_wheel(path: Path, payload: bytes) -> None:
 
 def write_source(path: Path, payload: bytes) -> None:
     with tarfile.open(path, mode="w:gz") as archive:
-        info = tarfile.TarInfo("shadow_mission-0.1.0b1/src/module.py")
+        info = tarfile.TarInfo("shadow_mission-0.1.0b2/src/module.py")
         info.size = len(payload)
         archive.addfile(info, io.BytesIO(payload))
 
 
 def test_release_manifests_bind_package_plugin_lima_and_tag() -> None:
-    verify_release(tag="v0.1.0b1", dist=None)
+    verify_release(tag="v0.1.0b2", dist=None)
 
     with pytest.raises(ReleaseVerificationError, match="release tag"):
-        verify_release(tag="v0.1.0b2", dist=None)
+        verify_release(tag="v0.1.0b1", dist=None)
 
 
 @pytest.mark.parametrize(
@@ -58,7 +58,7 @@ def test_release_manifests_reject_runtime_plugin_version_drift(
     )
 
     with pytest.raises(ReleaseVerificationError, match=message):
-        verify_plugin_manifests("0.1.0b1")
+        verify_plugin_manifests("0.1.0b2")
 
 
 def test_marketplace_manifest_binds_the_repository_root_source() -> None:
@@ -198,8 +198,8 @@ def test_artifact_scan_rejects_private_paths_and_secret_like_values(
 ) -> None:
     dist = tmp_path / "dist"
     dist.mkdir()
-    wheel = dist / "shadow_mission-0.1.0b1-py3-none-any.whl"
-    source = dist / "shadow_mission-0.1.0b1.tar.gz"
+    wheel = dist / "shadow_mission-0.1.0b2-py3-none-any.whl"
+    source = dist / "shadow_mission-0.1.0b2.tar.gz"
     write_wheel(wheel, b"clean package\n")
     write_source(source, b"clean source\n")
     verify_artifacts(dist)

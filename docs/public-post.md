@@ -28,7 +28,7 @@ Usage and cost remain unavailable.
 
 Repository: https://github.com/WrenSignal/factory-shadow
 
-Release and offline proof: https://github.com/WrenSignal/factory-shadow/releases/tag/v0.1.0b1
+Release and offline proof: https://github.com/WrenSignal/factory-shadow/releases/tag/v0.1.0b2
 
 @FactoryAI
 

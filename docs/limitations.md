@@ -1,6 +1,6 @@
 # Limitations
 
-Shadow Mission `0.1.0b1` is a bounded Factory Guild preview.
+Shadow Mission `0.1.0b2` is a bounded Factory Guild preview.
 `pyproject.toml` defines that version.
 `.factory-plugin/plugin.json` stays on the stable `0.1.0` base.
 The preview covers one fixed Factory Mission, seed, evaluator, and review policy.
@@ -130,7 +130,7 @@ They do not measure actual pair cost.
 
 ## Preview version boundary
 
-The public Python distribution uses `0.1.0b1`.
+The public Python distribution uses `0.1.0b2`.
 The Factory plugin and live protocol use the stable `0.1.0` base.
 The beta tag supports installation, inspection, and offline proof.
 It does not authorize a new live Mission.
