@@ -1,0 +1,12 @@
+{
+  "name": "shadow-mission",
+  "description": "Mission-wide review for Factory Missions.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Shadow Mission"
+  },
+  "homepage": "https://github.com/WrenSignal/factory-shadow",
+  "repository": "https://github.com/WrenSignal/factory-shadow",
+  "license": "MIT",
+  "keywords": ["factory", "missions", "review", "hooks"]
+}

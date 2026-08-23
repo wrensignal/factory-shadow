@@ -1,0 +1,21 @@
+{
+  "extractor": {
+    "kind": "internal"
+  },
+  "orchestrator": {
+    "count": 1,
+    "kind": "orchestrator"
+  },
+  "probe": {
+    "kind": "internal",
+    "read_only": true
+  },
+  "validator": {
+    "count": 0,
+    "kind": "validator"
+  },
+  "worker": {
+    "kind": "worker",
+    "minimum": 3
+  }
+}

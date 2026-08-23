@@ -1,0 +1,20 @@
+{
+  "run_id": "run-replay",
+  "roles": [
+    {"session_alias": "worker-a", "role_id": "role-a", "kind": "worker", "confidence": "high"},
+    {"session_alias": "validator-a", "role_id": "role-v", "kind": "validator", "confidence": "high"}
+  ],
+  "evidence": [
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "independent-evidence-worker", "run_id": "run-replay", "session_alias": "worker-a", "kind": "test_use", "source": "unit_test", "locator": "tests/test_checkout.py::test_total", "digest": "3333333333333333333333333333333333333333333333333333333333333333", "observed_at": 1},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "independent-evidence-validator", "run_id": "run-replay", "session_alias": "validator-a", "kind": "test_use", "source": "integration_test", "locator": "tests/integration/test_checkout.py::test_user_flow", "digest": "4444444444444444444444444444444444444444444444444444444444444444", "observed_at": 2}
+  ],
+  "claims": [
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "claim_id": "independent-claim-worker", "run_id": "run-replay", "session_alias": "worker-a", "subject": "checkout total", "subject_locator": "tests/test_checkout.py::test_total", "property": "validation result", "value": "passed", "unit": null, "confidence": 0.95, "evidence_ids": ["independent-evidence-worker"], "observed_at": 3},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "claim_id": "independent-claim-validator", "run_id": "run-replay", "session_alias": "validator-a", "subject": "checkout flow", "subject_locator": "tests/integration/test_checkout.py::test_user_flow", "property": "validation result", "value": "passed", "unit": null, "confidence": 0.95, "evidence_ids": ["independent-evidence-validator"], "observed_at": 4}
+  ],
+  "milestones": [{"milestone_id": "milestone-checkout", "attributes": {"name": "checkout"}}],
+  "links": [
+    {"claim_id": "independent-claim-worker", "milestone_id": "milestone-checkout"},
+    {"claim_id": "independent-claim-validator", "milestone_id": "milestone-checkout"}
+  ]
+}

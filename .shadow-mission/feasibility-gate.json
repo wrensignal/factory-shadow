@@ -1,0 +1,170 @@
+{
+  "schema_version": "0.1",
+  "status": "core-feasibility-pass",
+  "core_feasibility_verdict": "pass",
+  "live_gate_verdict": "stop",
+  "strict_gate_failure_stage": "live_mission_blocker_loop",
+  "core_feasibility_complete": true,
+  "complete_success": false,
+  "phase_2_ready": false,
+  "paid_mission_started": true,
+  "live_run_count": 2,
+  "execution_surface": "authenticated-host-experiment",
+  "core_feasibility_run": {
+    "launch_form": "droid exec --mission --auto high",
+    "exit_code": 0,
+    "wall_time_seconds": 663.8,
+    "hook_records": 286,
+    "observed_session_count": 22,
+    "worker_outputs_valid": true,
+    "worker_a_guidance_delivered": true,
+    "worker_a_guidance_acknowledged": true,
+    "worker_b_guidance_delivered": true,
+    "worker_b_guidance_acknowledged": true,
+    "completion_blocks": 0,
+    "droid_version_stable": true,
+    "installed_plugin_artifact_digest": "94a4910658871d91a027fc1b16acbdf790934e96e11ce6b27c153f671b0aa10b",
+    "repository_persisted_event_payload": false
+  },
+  "strict_gate_mission_result": {
+    "launch_form": "droid exec --mission --auto high",
+    "exit_code": 143,
+    "termination": "operator-stopped-after-stalled-completion-loop",
+    "wall_time_reported": "16m47s",
+    "workspace_changes_observed": false,
+    "candidate_gate_produced": false
+  },
+  "offline_harness": {
+    "status": "offline-harness-pass",
+    "focused_tests_passed_before_live_run": 131,
+    "focused_tests_passed_after_live_fixes": 137,
+    "all_checks_passed": true,
+    "factory_calls": 0,
+    "model_calls": 0,
+    "external_network_calls": 0,
+    "live_run_count_incremented": false
+  },
+  "host_preflight": {
+    "droid_authenticated": true,
+    "factory_pro_reported_active": true,
+    "extra_usage_reported_active": true,
+    "limits_observation": "Standard Usage active; Extra Usage balance reported as 20.00",
+    "model_inventory_captured_without_model_call": true,
+    "approved_models_and_reasoning_present": true,
+    "temporary_plugin_installed_for_run": true,
+    "automatic_updates_disabled_at_every_harness_droid_boundary": true,
+    "disposable_guest_used": false,
+    "clean_factory_profile_verified": false
+  },
+  "bindings": {
+    "droid_version": "0.197.0",
+    "droid_installation_channel": "existing-host-installation",
+    "droid_binary_digest": "bbdb4c822c8a50f4a4958d92e5859de75e46dbb8617f101bf519baf8872529c2",
+    "droid_auto_update_control": "env-false",
+    "plugin_version": "0.1.0",
+    "launch_installed_plugin_artifact_digest": "da32559c368138ca15811351768d447acbb7839fba91961cf41df167071cd5d1",
+    "current_source_plugin_artifact_digest": "d94867d8e114fa10798e8bef45576f270d0ddb11d78b1580b5fd272ac7db7e80",
+    "droid_sdk_version": "0.2.0",
+    "lima_version": "2.2.0",
+    "vm_image_digest": "not-applicable-host-run",
+    "isolation_config_digest": "4827a29ac2adf6a1dfa8c10021b1acffe0523d32386215253a5d7b59b5a6dac6",
+    "factory_profile_digest": "unverified-host-inherited-profile",
+    "fixture_manifest_digest": "d1ed0a7119575f9505db087cea7497a1a17dba8455d09b6dc24f0d95d0507e4a",
+    "gate_surface_digest": "5e53c17876048daaec00795d579c2fb9548dbc9cd8069e25bf181b673fce55b1",
+    "model_inventory_digest": "5850acdee25e0afa16ca57f6fb998c114bca0c2b204697c106b12aa19859a311"
+  },
+  "models": {
+    "orchestrator_model": "gpt-5.6-terra",
+    "orchestrator_reasoning": "high",
+    "worker_model": "gpt-5.4-mini",
+    "worker_reasoning": "high",
+    "validator_model": "gpt-5.4-mini",
+    "validator_reasoning": "high",
+    "probe_model": "gpt-5.6-luna",
+    "probe_reasoning": "medium"
+  },
+  "capabilities": {
+    "run_transport_integrity": {
+      "status": "pass",
+      "basis": "The collector durably exported 439 sanitized hook records."
+    },
+    "hook_event_provenance": {
+      "status": "stop",
+      "basis": "All collected live hook records were marked untrusted_provenance, and the Mission did not complete an allowed fallback chain."
+    },
+    "disposable_isolation": {
+      "status": "stop",
+      "basis": "The authorized experiment used the authenticated host instead of the required disposable no-mount Lima guest."
+    },
+    "clean_factory_profile": {
+      "status": "stop",
+      "basis": "The inherited host Factory profile was not clean or measured against the sealed profile contract."
+    },
+    "session_hooks": {
+      "status": "stop",
+      "basis": "The Mission exposed an orchestrator and an unplanned explorer, but not the required two feature workers and validator lifecycle."
+    },
+    "distinct_session_and_mission_identity": {
+      "status": "stop",
+      "basis": "The Mission terminated before the required worker and validator identity set could be established."
+    },
+    "live_transcript_access": {
+      "status": "stop",
+      "basis": "The required per-role monotonic transcript observations were not finalized."
+    },
+    "targeted_guidance_routing": {
+      "status": "stop",
+      "basis": "No required feature worker reached the target-only guidance sequence."
+    },
+    "stop_blocker_behavior": {
+      "status": "stop",
+      "basis": "One subagent emitted repeated Stop events for more than ten minutes without bounded release or correction."
+    },
+    "role_mapping": {
+      "status": "stop",
+      "basis": "The orchestrator created an extra explorer before the two required feature workers, and the required role map never completed."
+    },
+    "independent_probe_boundary": {
+      "status": "pass",
+      "basis": "A fresh SDK session disabled every discovered tool before the prompt and returned the expected cited cents conflict result."
+    }
+  },
+  "evidence_export": {
+    "status": "sanitized-export-pass",
+    "record_count": 439,
+    "sha256": "82dc603a5fa04b03906c10b5c7469ea33fa1937b1c012596a0abd9b9427f7149",
+    "repository_persisted_payload": false
+  },
+  "budget": {
+    "recorded_pro_subscription": "10.00",
+    "recorded_extra_usage_purchase": "10.00",
+    "recorded_prior_shadow_model_charges_before_run": "0.00",
+    "pre_run_extra_usage_balance_observed": "20.00",
+    "post_run_usage": "unavailable",
+    "per_run_cost": "unavailable",
+    "pay_as_you_go_enabled": false,
+    "maximum_additional_exposure": "10.00",
+    "binding_status": "stop-ledger-does-not-explain-observed-balance"
+  },
+  "cleanup": {
+    "mission_process_tree_absent": true,
+    "temporary_host_plugin_removed": true,
+    "temporary_host_marketplace_removed": true,
+    "disposable_vm_instance_absent": true,
+    "disposable_vm_disk_absent": true
+  },
+  "strict_gate_unresolved_blockers": [
+    "The first strict-gate Mission stalled in a repeated Stop loop and produced no candidate gate.",
+    "The host experiment cannot satisfy disposable isolation or clean Factory profile requirements.",
+    "Hook provenance remained untrusted for every collected live event.",
+    "The required feature-worker, validator, guidance, correction, and finalization sequences were not observed.",
+    "Post-run Factory usage and per-run cost were unavailable.",
+    "The recorded Extra Usage purchase does not explain the pre-run 20.00 balance.",
+    "The launch artifact predates the two post-run SDK tool-lockdown refactors and cannot certify the corrected source."
+  ],
+  "core_feasibility_remaining_limits": [
+    "Factory propagated role markers into later planning and validation sessions; current source claims one session per role and quarantines rejected duplicates.",
+    "Static role markers identify controlled experiment roles but do not authenticate a hostile claimant; release-grade role mapping still needs authoritative Mission graph evidence.",
+    "The experiment persisted acknowledgment tokens in shared worker outputs, so the strict sibling-marker negative control remains unproven for that launch artifact."
+  ]
+}

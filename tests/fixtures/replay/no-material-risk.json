@@ -1,0 +1,17 @@
+{
+  "run_id": "run-replay",
+  "roles": [
+    {"session_alias": "worker-a", "role_id": "role-a", "kind": "worker", "confidence": "high"},
+    {"session_alias": "worker-b", "role_id": "role-b", "kind": "worker", "confidence": "high"}
+  ],
+  "evidence": [
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "low-risk-evidence-a", "run_id": "run-replay", "session_alias": "worker-a", "kind": "code_use", "source": "prose_guide", "locator": "docs/style.md#line-width", "digest": "5555555555555555555555555555555555555555555555555555555555555555", "observed_at": 1},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "low-risk-evidence-b", "run_id": "run-replay", "session_alias": "worker-b", "kind": "code_use", "source": "prose_guide", "locator": "docs/style.md#line-width", "digest": "6666666666666666666666666666666666666666666666666666666666666666", "observed_at": 2}
+  ],
+  "claims": [
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "claim_id": "low-risk-claim-a", "run_id": "run-replay", "session_alias": "worker-a", "subject": "line width", "subject_locator": "docs/style.md#line-width", "property": "preferred width", "value": 88, "unit": "count", "confidence": 0.95, "evidence_ids": ["low-risk-evidence-a"], "observed_at": 3},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "claim_id": "low-risk-claim-b", "run_id": "run-replay", "session_alias": "worker-b", "subject": "line width", "subject_locator": "docs/style.md#line-width", "property": "preferred width", "value": 88, "unit": "count", "confidence": 0.95, "evidence_ids": ["low-risk-evidence-b"], "observed_at": 4}
+  ],
+  "milestones": [],
+  "links": []
+}

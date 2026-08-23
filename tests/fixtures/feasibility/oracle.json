@@ -1,0 +1,26 @@
+{
+  "schema_version": "0.1",
+  "conflict": {
+    "subject_locator": "api-schema.json#/properties/amount",
+    "property": "unit",
+    "worker_a_value": "cents",
+    "worker_b_value": "dollars",
+    "authoritative_sources": [
+      "api-schema.json#/properties/amount",
+      "db-schema.sql:payments.amount_cents"
+    ]
+  },
+  "shared_assumption": {
+    "subject_locator": "mission:criterion-payment-amount",
+    "property": "rounding_mode",
+    "value": "bankers",
+    "affected_workers": ["worker-a", "worker-b"],
+    "authoritative_source": null
+  },
+  "controls": {
+    "worker_a_marker": "ROUTE-ALPHA-7319",
+    "worker_b_marker": "ROUTE-BRAVO-4826",
+    "negative_marker": "ROUTE-NEGATIVE-9054",
+    "secret_canary": "sk-shadow-feasibility-NEVER-PERSIST-7319"
+  }
+}

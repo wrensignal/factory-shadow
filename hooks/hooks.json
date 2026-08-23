@@ -1,0 +1,68 @@
+{
+  "SessionStart": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 \"${DROID_PLUGIN_ROOT}/hooks/shadow_hook.py\"",
+          "timeout": 2
+        }
+      ]
+    }
+  ],
+  "UserPromptSubmit": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 \"${DROID_PLUGIN_ROOT}/hooks/shadow_hook.py\"",
+          "timeout": 2
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 \"${DROID_PLUGIN_ROOT}/hooks/shadow_hook.py\"",
+          "timeout": 2
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 \"${DROID_PLUGIN_ROOT}/hooks/shadow_hook.py\"",
+          "timeout": 2
+        }
+      ]
+    }
+  ],
+  "SubagentStop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 \"${DROID_PLUGIN_ROOT}/hooks/shadow_hook.py\"",
+          "timeout": 2
+        }
+      ]
+    }
+  ],
+  "SessionEnd": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 \"${DROID_PLUGIN_ROOT}/hooks/shadow_hook.py\"",
+          "timeout": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "run_id": "run-replay",
+  "roles": [
+    {"session_alias": "worker-a", "role_id": "role-a", "kind": "worker", "confidence": "high"},
+    {"session_alias": "worker-b", "role_id": "role-b", "kind": "worker", "confidence": "high"}
+  ],
+  "evidence": [
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "authority-evidence-a", "run_id": "run-replay", "session_alias": "worker-a", "kind": "database_schema", "source": "database_schema", "locator": "db/schema.sql#amount", "digest": "1111111111111111111111111111111111111111111111111111111111111111", "observed_at": 1},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "authority-evidence-b", "run_id": "run-replay", "session_alias": "worker-b", "kind": "database_schema", "source": "database_schema", "locator": "db/schema.sql#amount", "digest": "2222222222222222222222222222222222222222222222222222222222222222", "observed_at": 2}
+  ],
+  "claims": [
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "claim_id": "authority-claim-a", "run_id": "run-replay", "session_alias": "worker-a", "subject": "amount", "subject_locator": "db/schema.sql#amount", "property": "storage unit", "value": "cents", "unit": "cents", "confidence": 0.95, "evidence_ids": ["authority-evidence-a"], "targets": [], "observed_at": 3},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "claim_id": "authority-claim-b", "run_id": "run-replay", "session_alias": "worker-b", "subject": "amount", "subject_locator": "db/schema.sql#amount", "property": "storage unit", "value": "cents", "unit": "cent", "confidence": 0.95, "evidence_ids": ["authority-evidence-b"], "targets": [], "observed_at": 4}
+  ],
+  "milestones": [{"milestone_id": "milestone-payment", "attributes": {"name": "payment"}}],
+  "links": [
+    {"claim_id": "authority-claim-a", "milestone_id": "milestone-payment"},
+    {"claim_id": "authority-claim-b", "milestone_id": "milestone-payment"}
+  ]
+}

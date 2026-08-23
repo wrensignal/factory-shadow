@@ -1,0 +1,25 @@
+{
+  "schema_version": "0.1",
+  "records": [
+    {
+      "role": "worker-a",
+      "record_boundary": true,
+      "text": "ROUTE-ALPHA-7319: The API contract stores amount in cents."
+    },
+    {
+      "role": "worker-b",
+      "record_boundary": true,
+      "text": "ROUTE-BRAVO-4826: The stale guide describes amount in dollars."
+    },
+    {
+      "role": "worker-a",
+      "record_boundary": true,
+      "text": "ROUTE-ALPHA-7319: Use bankers rounding for invoice totals."
+    },
+    {
+      "role": "worker-b",
+      "record_boundary": true,
+      "text": "ROUTE-BRAVO-4826: Use bankers rounding for webhook totals."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "payment": {
+    "amount": {
+      "minimum": 0,
+      "type": "integer",
+      "unit": "cents"
+    },
+    "currency": {
+      "pattern": "^[A-Z]{3}$",
+      "type": "string"
+    }
+  },
+  "schema_version": "1"
+}

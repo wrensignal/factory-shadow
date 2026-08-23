@@ -1,0 +1,14 @@
+{
+  "name": "shadow-feasibility-local",
+  "description": "Pinned local marketplace for the disposable Shadow feasibility guest",
+  "owner": {
+    "name": "Shadow Mission"
+  },
+  "plugins": [
+    {
+      "name": "shadow-mission",
+      "description": "Shadow Mission Phase 1 feasibility plugin",
+      "source": "./shadow-mission"
+    }
+  ]
+}

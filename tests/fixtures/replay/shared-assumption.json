@@ -1,0 +1,22 @@
+{
+  "run_id": "run-replay",
+  "roles": [
+    {"session_alias": "worker-a", "role_id": "role-a", "kind": "worker", "confidence": "high"},
+    {"session_alias": "worker-b", "role_id": "role-b", "kind": "worker", "confidence": "high"}
+  ],
+  "evidence": [
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "assumption-source-a", "run_id": "run-replay", "session_alias": "worker-a", "kind": "claim_source", "source": "prose_guide", "locator": "docs/guide.md#retry-limit", "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "observed_at": 1},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "assumption-target-a", "run_id": "run-replay", "session_alias": "worker-a", "kind": "changed_file", "source": "repository_change", "locator": "src/retry_a.py", "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "observed_at": 2},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "assumption-source-b", "run_id": "run-replay", "session_alias": "worker-b", "kind": "claim_source", "source": "prose_guide", "locator": "docs/guide.md#retry-limit", "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "observed_at": 3},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "evidence_id": "assumption-target-b", "run_id": "run-replay", "session_alias": "worker-b", "kind": "changed_file", "source": "repository_change", "locator": "src/retry_b.py", "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "observed_at": 4}
+  ],
+  "claims": [
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "claim_id": "assumption-claim-a", "run_id": "run-replay", "session_alias": "worker-a", "subject": "retry limit", "subject_locator": "docs/guide.md#retry-limit", "property": "maximum retries", "value": 3, "unit": "count", "confidence": 0.95, "evidence_ids": ["assumption-source-a", "assumption-target-a"], "targets": [{"kind": "file", "target_id": "src/retry_a.py", "evidence_id": "assumption-target-a", "attributes": {}}], "observed_at": 5},
+    {"provenance_status": "hook_authenticated", "redaction_status": "clean", "claim_id": "assumption-claim-b", "run_id": "run-replay", "session_alias": "worker-b", "subject": "retry limit", "subject_locator": "docs/guide.md#retry-limit", "property": "maximum retries", "value": 3, "unit": "items", "confidence": 0.95, "evidence_ids": ["assumption-source-b", "assumption-target-b"], "targets": [{"kind": "file", "target_id": "src/retry_b.py", "evidence_id": "assumption-target-b", "attributes": {}}], "observed_at": 6}
+  ],
+  "milestones": [{"milestone_id": "milestone-retries", "attributes": {"name": "retry behavior"}}],
+  "links": [
+    {"claim_id": "assumption-claim-a", "milestone_id": "milestone-retries"},
+    {"claim_id": "assumption-claim-b", "milestone_id": "milestone-retries"}
+  ]
+}

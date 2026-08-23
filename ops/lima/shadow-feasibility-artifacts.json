@@ -1,0 +1,19 @@
+{
+  "schema_version": "0.1",
+  "droid": {
+    "version": "0.197.0",
+    "installation_channel": "factory-npm-platform-tarball",
+    "package": "@factory/cli-linux-arm64@0.197.0",
+    "tarball_url": "https://registry.npmjs.org/@factory/cli-linux-arm64/-/cli-linux-arm64-0.197.0.tgz",
+    "published_sha1": "f5dc390c08145642037543d526c5f5f2fd90ae38",
+    "published_sha512": "7fd5af5edf82aa07441eab15e254026d01c17159d3ccf74230e2a883cc073dbc2f404a79fc2814f6622814841cd2f82d686d441419111424398487f2e4daacc5",
+    "binary_path": "/home/shadow/bin/droid",
+    "binary_sha256": "9bf6a5b667ed231d75c6aef720c02d54b042d45d1da6551832e6ae4376d667f9",
+    "auto_update_control": "FACTORY_DROID_AUTO_UPDATE_ENABLED=false"
+  },
+  "lima": {
+    "version": "2.2.0",
+    "template": "ops/lima/shadow-feasibility.yaml",
+    "image_digest": "sha256:7df0201546f75b8bcc1044594c806c35749421ad3c9bc1be2a3ab806cfae39cc"
+  }
+}

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shadow-mission"
+version = "0.1.0b1"
+description = "Mission-wide review for Factory Missions"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "droid-sdk==0.2.0",
+  "pydantic>=2,<3",
+]
+license = "MIT"
+keywords = ["factory", "missions", "review", "hooks"]
+
+[project.urls]
+Homepage = "https://github.com/WrenSignal/factory-shadow"
+Repository = "https://github.com/WrenSignal/factory-shadow"
+Issues = "https://github.com/WrenSignal/factory-shadow/issues"
+
+
+[project.optional-dependencies]
+dev = [
+  "build>=1,<2",
+  "PyYAML>=6,<7",
+  "pytest>=8,<9",
+  "twine>=6.1,<7",
+]
+
+[project.scripts]
+shadow-feasibility = "shadow_mission.feasibility:main"
+shadow = "shadow_mission.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

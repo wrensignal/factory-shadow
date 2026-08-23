@@ -1,0 +1,95 @@
+{
+  "schema_version": "0.1",
+  "observations": [
+    {
+      "observation_id": "obs-identity",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "identity",
+      "kind": "identity",
+      "status": "identified",
+      "source_class": "external_frozen"
+    },
+    {
+      "observation_id": "obs-direct",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "direct_evidence",
+      "kind": "direct_evidence",
+      "status": "observed",
+      "source_class": "external_frozen"
+    },
+    {
+      "observation_id": "obs-probe",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "probe_confirmation",
+      "kind": "probe_confirmation",
+      "status": "confirmed",
+      "source_class": "external_frozen"
+    },
+    {
+      "observation_id": "obs-correction",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "correction",
+      "kind": "correction",
+      "status": "corrected",
+      "source_class": "external_frozen"
+    },
+    {
+      "observation_id": "obs-block-direct",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "blocker_create",
+      "kind": "direct_evidence",
+      "status": "observed",
+      "source_class": "external_frozen"
+    },
+    {
+      "observation_id": "obs-block-probe",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "blocker_create",
+      "kind": "probe_confirmation",
+      "status": "confirmed",
+      "source_class": "external_frozen"
+    },
+    {
+      "observation_id": "obs-block-clear",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "blocker_clear",
+      "kind": "correction",
+      "status": "corrected",
+      "source_class": "external_frozen"
+    },
+    {
+      "observation_id": "obs-intervention-resolve",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "intervention_resolve",
+      "kind": "correction",
+      "status": "corrected",
+      "source_class": "external_frozen"
+    },
+    {
+      "observation_id": "obs-release",
+      "run_id": "offline-fixture-run",
+      "target_id": "worker-a-raw",
+      "risk_id": "offline-blocker",
+      "transition": "release_acceptance",
+      "kind": "release_acceptance",
+      "status": "accepted",
+      "source_class": "external_frozen"
+    }
+  ]
+}

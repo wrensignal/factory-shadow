@@ -1,0 +1,16 @@
+{
+  "name": "factory-shadow",
+  "description": "Mission-wide review plugins for Factory Missions.",
+  "owner": {
+    "name": "WrenSignal"
+  },
+  "plugins": [
+    {
+      "name": "shadow-mission",
+      "description": "Mission-wide review for Factory Missions.",
+      "source": ".",
+      "homepage": "https://github.com/WrenSignal/factory-shadow",
+      "tags": ["factory", "missions", "review", "hooks"]
+    }
+  ]
+}

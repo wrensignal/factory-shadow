@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+DROID_BINARY=/home/shadow/bin/droid
+EXPECTED_SHA256=9bf6a5b667ed231d75c6aef720c02d54b042d45d1da6551832e6ae4376d667f9
+
+if [ ! -x "$DROID_BINARY" ]; then
+  echo "pinned Droid binary is unavailable" >&2
+  exit 126
+fi
+
+observed_sha256=$(sha256sum "$DROID_BINARY" | cut -d ' ' -f 1)
+if [ "$observed_sha256" != "$EXPECTED_SHA256" ]; then
+  echo "pinned Droid binary digest mismatch" >&2
+  exit 126
+fi
+
+export FACTORY_DROID_AUTO_UPDATE_ENABLED=false
+exec "$DROID_BINARY" "$@"

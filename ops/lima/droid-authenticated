@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+KEY_FILE=/home/shadow/credential/factory-api-key
+if [ ! -f "$KEY_FILE" ] || [ -L "$KEY_FILE" ]; then
+    echo 'guest Factory API key is unavailable' >&2
+    exit 126
+fi
+if [ "$(stat -c '%a' "$KEY_FILE")" != 600 ] || [ "$(stat -c '%u' "$KEY_FILE")" -ne "$(id -u)" ]; then
+    echo 'guest Factory API key is not private' >&2
+    exit 126
+fi
+IFS= read -r FACTORY_API_KEY < "$KEY_FILE"
+if [ -z "$FACTORY_API_KEY" ]; then
+    echo 'guest Factory API key is empty' >&2
+    exit 126
+fi
+export FACTORY_API_KEY
+exec /home/shadow/bin/droid-pinned "$@"
