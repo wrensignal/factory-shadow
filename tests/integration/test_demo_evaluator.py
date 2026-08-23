@@ -629,8 +629,18 @@ def test_untrusted_function_uses_bounded_closed_descriptor_process(
 
     assert outcome.ok
     assert isinstance(outcome.value, list)
-    assert outcome.value[0] < evaluator.resource.RLIM_INFINITY
-    assert outcome.value[1] < evaluator.resource.RLIM_INFINITY
+    memory_bound = (
+        evaluator._CHILD_DARWIN_MEMORY_BYTES
+        if sys.platform == "darwin"
+        else evaluator._CHILD_ADDRESS_SPACE_BYTES
+    )
+    data_bound = (
+        evaluator._CHILD_DARWIN_MEMORY_BYTES
+        if sys.platform == "darwin"
+        else evaluator._CHILD_DATA_BYTES
+    )
+    assert 0 < outcome.value[0] <= memory_bound
+    assert 0 < outcome.value[1] <= data_bound
     assert outcome.value[2] <= evaluator._CHILD_CPU_SECONDS
     assert outcome.value[3] <= evaluator._CHILD_OPEN_FILES
     assert outcome.value[4] <= evaluator._CHILD_PROCESSES

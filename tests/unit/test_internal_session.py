@@ -842,6 +842,7 @@ def test_transport_hands_pinned_descriptor_to_spawn_and_closes_on_failure(
 def test_darwin_descriptor_handoff_uses_dev_fd_before_spawn(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr("shadow_mission.internal_session.sys.platform", "darwin")
     approved = b"#!/bin/sh\nexit 0\n"
     source = tmp_path / "approved-droid"
     source.write_bytes(approved)
@@ -858,7 +859,6 @@ def test_darwin_descriptor_handoff_uses_dev_fd_before_spawn(
         assert kwargs["pass_fds"] == (descriptor,)
         raise OSError("darwin spawn failure")
 
-    monkeypatch.setattr("shadow_mission.internal_session.sys.platform", "darwin")
     monkeypatch.setattr(asyncio, "create_subprocess_exec", fail_spawn)
     transport = ReplacementEnvironmentTransport(
         descriptor,

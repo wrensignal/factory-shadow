@@ -4,6 +4,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass, replace
@@ -1350,7 +1351,10 @@ def test_run_uses_only_pinned_update_disabled_droid_boundary(tmp_path: Path) -> 
     assert mission_call[0][1:6] == ("exec", "--mission", "--auto", "high", "-f")
     assert "--skip-permissions-unsafe" not in mission_call[0]
     for arguments, environment, cwd in fixture.runner.calls:
-        assert arguments[0] == str(fixture.request.droid_path.resolve())
+        if sys.platform.startswith("linux"):
+            assert arguments[0].startswith("/proc/self/fd/")
+        else:
+            assert arguments[0] == str(fixture.request.droid_path.resolve())
         assert environment["FACTORY_DROID_AUTO_UPDATE_ENABLED"] == "false"
         assert str(fixture.request.evaluator) not in " ".join(arguments)
         assert str(fixture.request.evaluator) not in json.dumps(environment)
