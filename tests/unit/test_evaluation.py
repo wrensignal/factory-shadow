@@ -359,7 +359,7 @@ def test_deeply_nested_evaluation_result_is_a_boundary_error(
     result_path = tmp_path / "result.json"
     result_path.write_text("[" * 2_000 + "]" * 2_000, encoding="utf-8")
 
-    with pytest.raises(EvaluationBoundaryError, match="result is invalid"):
+    with pytest.raises(EvaluationBoundaryError, match="evaluation result"):
         evaluation_module._load_evaluation_record(result_path)
 
 

@@ -19,7 +19,6 @@ def test_clean_noneditable_install_exposes_public_commands(tmp_path: Path) -> No
             "install",
             "--disable-pip-version-check",
             "--no-deps",
-            "--no-build-isolation",
             "--target",
             str(target),
             str(PROJECT_ROOT),
