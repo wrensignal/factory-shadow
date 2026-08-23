@@ -5,7 +5,7 @@ The public checks need no Factory account, credential, approval, model call, or 
 
 ## Evidence sources
 
-The GitHub release for `v0.1.0b2` publishes these evidence sources:
+The GitHub release for `v0.1.0b3` publishes these evidence sources:
 
 - `pair-summary-final.json` contains the frozen aggregate record;
 - `incomplete-pairs.json` records pairs 54 and 57;
@@ -29,7 +29,7 @@ The incomplete record SHA-256 is `84a13287bd07bae58fbb036b60e87c603195325f6c9760
 ```sh
 git clone https://github.com/WrenSignal/factory-shadow.git
 cd factory-shadow
-git checkout --detach v0.1.0b2
+git checkout --detach v0.1.0b3
 python3 -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check -e '.[dev]'
 ```
@@ -40,7 +40,7 @@ python3 -m venv .venv
 
 ```sh
 .venv/bin/python -m pytest tests/unit tests/integration
-.venv/bin/python ci/verify_release.py --tag v0.1.0b2
+.venv/bin/python ci/verify_release.py --tag v0.1.0b3
 ```
 
 These commands make no Factory, model, Lima, or paid Mission call.
@@ -56,7 +56,7 @@ The command exit status is the check result.
 ```sh
 .venv/bin/python -m build
 .venv/bin/python -m twine check dist/*
-.venv/bin/python ci/verify_release.py --tag v0.1.0b2 --dist dist
+.venv/bin/python ci/verify_release.py --tag v0.1.0b3 --dist dist
 
 WHEEL_VENV="$(mktemp -d)/venv"
 .venv/bin/python -m venv "$WHEEL_VENV"
@@ -73,19 +73,19 @@ It rejects unsafe archive paths, linked source members, private paths, and commo
 mkdir -p "$HOME/Downloads"
 
 curl -fL \
-  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b2/factory-shadow-proof-pairs-46-53.tar \
+  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b3/factory-shadow-proof-pairs-46-53.tar \
   -o "$HOME/Downloads/factory-shadow-proof-pairs-46-53.tar"
 
 curl -fL \
-  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b2/factory-shadow-proof-pair-55.tar \
+  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b3/factory-shadow-proof-pair-55.tar \
   -o "$HOME/Downloads/factory-shadow-proof-pair-55.tar"
 
 curl -fL \
-  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b2/pair-summary-final.json \
+  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b3/pair-summary-final.json \
   -o "$HOME/Downloads/pair-summary-final.json"
 
 curl -fL \
-  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b2/incomplete-pairs.json \
+  https://github.com/WrenSignal/factory-shadow/releases/download/v0.1.0b3/incomplete-pairs.json \
   -o "$HOME/Downloads/incomplete-pairs.json"
 ```
 
@@ -163,7 +163,7 @@ These commands use the official Factory Marketplace interface.
 They change the reviewer's Factory plugin state.
 
 ```sh
-droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b2'
+droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b3'
 droid plugin install shadow-mission@factory-shadow --scope user
 ```
 
@@ -184,7 +184,7 @@ It also needs the exact pinned Factory and Lima boundaries.
 `pyproject.toml` pins Droid SDK `0.2.0`.
 The files under `ops/lima/` pin Lima `2.2.0` and image digests.
 The Factory plugin and live protocol use the stable `0.1.0` base.
-The `0.1.0b2` Python distribution does not authorize a new live Mission.
+The `0.1.0b3` Python distribution does not authorize a new live Mission.
 A later live candidate must align every runtime and preflight binding before re-sealing.
 
 Do not copy a Factory credential into a repository or Mission checkout.
@@ -203,9 +203,9 @@ Its `apply` command requires a staged offline dry run before any canonical write
 Its `verify` command checks the public signature and receipt offline.
 
 The preview re-seal completed with request digest
-`e80590328ddbc8a8ef4b329c1ad065df84d9487a2dcbd8c4d78e53ff3d594c80`.
+`0542850c2df5820abf794d6d86eda7cf73c4e662fbaf32ec341b0a04a42508ef`.
 Its verified receipt digest is
-`2b02cd80dfc8c5631c7860b0c5b51de75175156834f4336d10242ba79849dd76`.
+`134f054c7da7b5c117193e44323d5dab37b7ed794d6739f4620d79f95f55da0a`.
 
 Never hand-edit the sealed fixture or regenerate its pin.
 Re-sealing consumes no live run.
