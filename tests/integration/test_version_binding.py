@@ -1353,14 +1353,15 @@ def test_run_uses_only_pinned_update_disabled_droid_boundary(tmp_path: Path) -> 
     for arguments, environment, cwd in fixture.runner.calls:
         if sys.platform.startswith("linux"):
             assert arguments[0].startswith("/proc/self/fd/")
+            assert str(cwd).startswith("/proc/self/fd/")
         else:
             assert arguments[0] == str(fixture.request.droid_path.resolve())
+            assert cwd == fixture.request.repo.resolve()
         assert environment["FACTORY_DROID_AUTO_UPDATE_ENABLED"] == "false"
         assert str(fixture.request.evaluator) not in " ".join(arguments)
         assert str(fixture.request.evaluator) not in json.dumps(environment)
         assert factory_credential not in " ".join(arguments)
         assert factory_credential not in json.dumps(environment)
-        assert cwd == fixture.request.repo.resolve()
     assert "SHADOW_MISSION_RUN_SECRET" not in version_call[1]
     assert "SHADOW_MISSION_RUN_SECRET" in mission_call[1]
     source_canary = mission_call[1]["SHADOW_MISSION_SECRET_CANARY"]
