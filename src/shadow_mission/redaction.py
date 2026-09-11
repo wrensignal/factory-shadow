@@ -27,8 +27,11 @@ _ALLOWED_HOOK_EVENTS = {
 _MAX_CONTAINER_ITEMS = 10_000
 _MAX_NESTING_DEPTH = 32
 _SENSITIVE_KEYS = re.compile(
-    r"(?i)(authorization|api[_-]?key|token|secret|password|credential|private[_-]?key)"
+    r"(?i)(authorization|api[_-]?key|access[_-]?key|token|secret|password|"
+    r"credential|private[_-]?key|cookie|"
+    r"(?:^|[_-])(?:github[_-]?)?pat(?:$|[_-]))"
 )
+_ASSIGNMENT_VALUE = r"""(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;]+)"""
 _PATTERNS = (
     (
         re.compile(
@@ -37,21 +40,51 @@ _PATTERNS = (
         "[REDACTED:canary]",
     ),
     (re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+"), "Bearer [REDACTED]"),
-    (re.compile(r"\bsk-[A-Za-z0-9_-]{8,}"), "[REDACTED:token]"),
+    (
+        re.compile(r"(?i)\bBasic\s+[A-Za-z0-9+/]{4,}={0,2}"),
+        "Basic [REDACTED]",
+    ),
+    (
+        re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b"),
+        "[REDACTED:token]",
+    ),
     (
         re.compile(
-            r"(?i)\b([A-Z][A-Z0-9_]*(?:API_KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL))"
-            r"\s*=\s*[^\s,;]+"
+            r"\b(?:xox[baprs]-|xox[cd]-|xapp-|"
+            r"xoxe(?:\.[A-Za-z0-9-]+)?-)[A-Za-z0-9-]{10,}\b"
+        ),
+        "[REDACTED:token]",
+    ),
+    (re.compile(r"\bsk-[A-Za-z0-9_-]{8,}"), "[REDACTED:token]"),
+    (
+        re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
+        "[REDACTED:access-key]",
+    ),
+    (
+        re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
+        "[REDACTED:token]",
+    ),
+    (
+        re.compile(r"(?i)\bCookie\s*:\s*[^\r\n]+"),
+        "Cookie: [REDACTED]",
+    ),
+    (
+        re.compile(
+            rf"(?i)\b((?:[A-Z][A-Z0-9_]*_)?(?:API_KEY|ACCESS_KEY_ID|TOKEN|"
+            rf"SECRET|PASSWORD|CREDENTIAL|COOKIE|PAT))\s*=\s*{_ASSIGNMENT_VALUE}"
         ),
         r"\1=[REDACTED]",
     ),
     (
-        re.compile(r"(?i)\b(password|passwd|pwd)\s*[:=]\s*[^\s,;]+"),
+        re.compile(
+            rf"(?i)\b(password|passwd|pwd)\s*[:=]\s*{_ASSIGNMENT_VALUE}"
+        ),
         r"\1=[REDACTED]",
     ),
     (
         re.compile(
-            r"(?i)\b(session[_-]?id|transcript[_-]?path)\s*[:=]\s*[^\s,;]+"
+            rf"(?i)\b(session[_-]?id|transcript[_-]?path)\s*[:=]\s*"
+            rf"{_ASSIGNMENT_VALUE}"
         ),
         r"\1=[REDACTED]",
     ),

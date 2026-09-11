@@ -25,19 +25,31 @@ from .probe import (
 )
 from .review import MissionReviewController
 from .router import InterventionLatchStore, InterventionRouter
-from .rules import DeterministicRules, ProbeVerifier
+from .rules import DeterministicRules, Finding, ProbeVerifier, RiskCategory
 from .runtime import ReviewControllerBinding, RunPreparation
 from .storage import EventLedger
 from .transcript import TranscriptReader
 
 
+_PROBE_RISK_BY_RULE: dict[str, RiskCategory] = {
+    "cross_worker_conflict": "public_contract",
+    "shared_assumption": "public_contract",
+    "validation_overlap": "explicit_acceptance",
+}
+
+
+def _classify_probe_risk(finding: Finding) -> RiskCategory:
+    """Classify one deterministic finding before independent probe review."""
+
+    return _PROBE_RISK_BY_RULE[finding.rule]
+
+
 def _internal_environment() -> dict[str, str]:
     return {
-        key: value
-        for key, value in os.environ.items()
-        if isinstance(key, str) and isinstance(value, str)
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": os.defpath,
     }
-
 
 class _ManagedReviewController(MissionReviewController):
     def __init__(self, *args: Any, decoy: ActiveInertControl, **kwargs: Any) -> None:
@@ -267,7 +279,7 @@ class ProductionReviewControllerFactory:
                 probe_scheduler=probe_scheduler,
                 router=router,
                 repository_root=prepared.repo,
-                probe_risk_classifier=lambda finding: finding.risk_category,
+                probe_risk_classifier=_classify_probe_risk,
                 secret_canaries=exact_forbidden_values,
                 decoy=decoy,
             )

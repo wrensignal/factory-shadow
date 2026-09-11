@@ -1145,9 +1145,13 @@ class LiveGateController:
             "independent_probe_boundary": ("independent_probe",),
         }
         records: list[dict[str, object]] = []
+        evidence_ids: set[str] = set()
         for capability, sources in sources_by_capability.items():
+            facts = {
+                **facts_by_capability[capability],
+                "status": statuses[capability],
+            }
             for source in sources:
-                facts = {**facts_by_capability[capability], "status": statuses[capability]}
                 record = make_live_evidence_record(
                     run_id=self.run_id,
                     capability=capability,
@@ -1155,9 +1159,7 @@ class LiveGateController:
                     source_class=source,
                     facts=facts,
                 )
-                if record["evidence_id"] in {
-                    item["evidence_id"] for item in records
-                }:
+                if record["evidence_id"] in evidence_ids:
                     record = make_live_evidence_record(
                         run_id=self.run_id,
                         capability=capability,
@@ -1166,4 +1168,5 @@ class LiveGateController:
                         facts={**facts, "source_discriminator": source},
                     )
                 records.append(record)
+                evidence_ids.add(str(record["evidence_id"]))
         return records

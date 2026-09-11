@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 import demo.compare as compare_module
-from demo.compare import ComparisonError, compare
+from demo.compare import compare
 from demo.summarize_pairs import PairOutcomeArtifacts, build_summary
 from shadow_mission.protocol import BaselineRunRecord, RunRecord, canonical_json
 from shadow_mission.reporting import ReportRecord, rebuild_report
@@ -664,6 +664,59 @@ def test_comparison_refuses_seeded_finding_in_unresolved_risks(
     assert "causal_chain" not in result
     assert result["shadow_report_digest"] == report.record_digest
     assert json.loads(arguments["output_path"].read_bytes()) == result
+
+def test_comparison_refuses_when_one_closed_group_lacks_test_proof(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arguments, report = comparison_pair(tmp_path)
+    report = report_with_seeded_findings(
+        report,
+        finding_keys=(SEEDED_FINDING_KEY, OTHER_SEEDED_FINDING_KEY),
+        resolved_chain_keys=(SEEDED_FINDING_KEY,),
+        closed_without_test_keys=(OTHER_SEEDED_FINDING_KEY,),
+    )
+    monkeypatch.setattr(
+        compare_module,
+        "rebuild_report",
+        lambda *_args, **_kwargs: report,
+    )
+
+    result = compare(**arguments)
+
+    assert report.unresolved_risks == ()
+    assert result["status"] == "refused"
+    assert result["refusal_reason"] == (
+        "seeded conflict lacks delivered source-and-test repair evidence"
+    )
+    assert "causal_chain" not in result
+
+
+
+def test_comparison_refuses_correction_evidence_digest_substitution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arguments, report = comparison_pair(tmp_path)
+    report = report_with_seeded_findings(
+        report,
+        resolved_chain_keys=(SEEDED_FINDING_KEY,),
+    )
+    changed_evidence = list(report.evidence)
+    changed_evidence[0] = {**changed_evidence[0], "digest": "f" * 64}
+    report = with_report_values(report, evidence=tuple(changed_evidence))
+    monkeypatch.setattr(
+        compare_module,
+        "rebuild_report",
+        lambda *_args, **_kwargs: report,
+    )
+
+    result = compare(**arguments)
+
+    assert result["status"] == "refused"
+    assert result["refusal_reason"] == (
+        "seeded conflict lacks delivered source-and-test repair evidence"
+    )
 
 
 def test_comparison_refuses_when_any_seeded_finding_group_is_not_closed(

@@ -22,7 +22,11 @@ from .evaluation import (
     validate_evaluator_assets,
 )
 from .protocol import PreEvaluationRecord, RunRecord, canonical_json
-from .reporting import ReportError, load_run_record
+from .reporting import (
+    ReportError,
+    _load_mission_relation_record,
+    load_run_record,
+)
 from .source_export import ValidatedSourceArchive, validate_source_archive
 from .graph import GraphError, load_exchanges
 _DIGEST = r"^[0-9a-f]{64}$"
@@ -291,6 +295,23 @@ def finalize_run(
         ) from error
     if run_record.mission_process_stopped is not True:
         raise FinalizationError("Mission process stop is not attested")
+    if run_record.mission_relation_record_digest is None:
+        raise FinalizationError("Mission relation record binding is unavailable")
+    try:
+        relation, _ = _load_mission_relation_record(
+            run_dir / "correlation.json"
+        )
+    except ReportError as error:
+        raise FinalizationError(
+            "Mission relation record is unavailable or corrupt"
+        ) from error
+    if (
+        relation["source_digest"] != run_record.mission_relation_source_digest
+        or relation["mission_id"] != run_record.run_id
+        or relation["record_digest"]
+        != run_record.mission_relation_record_digest
+    ):
+        raise FinalizationError("Mission relation record binding differs")
     expected_process_success = run_record.runtime_outcome == "mission-terminated"
     if mission_process_succeeded != expected_process_success:
         raise FinalizationError("Mission process outcome differs from runtime record")

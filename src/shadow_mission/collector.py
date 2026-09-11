@@ -461,13 +461,18 @@ class HookCollector:
                 else HTTPStatus.UNAUTHORIZED
             )
             raise CollectorRequestError(status, "event authentication failed") from error
+
+        def discard_authenticated() -> None:
+            authenticator.discard(event_id, body)
         try:
             request_value = json.loads(body)
         except (json.JSONDecodeError, UnicodeError) as error:
+            discard_authenticated()
             raise CollectorRequestError(
                 HTTPStatus.BAD_REQUEST, "request is not valid JSON"
             ) from error
         if not isinstance(request_value, Mapping) or set(request_value) != _ALLOWED_REQUEST_FIELDS:
+            discard_authenticated()
             raise CollectorRequestError(
                 HTTPStatus.BAD_REQUEST, "request fields differ from the contract"
             )
@@ -476,6 +481,7 @@ class HookCollector:
             or request_value.get("run_id") != descriptor.get("run_id")
             or request_value.get("event_id") != event_id
         ):
+            discard_authenticated()
             raise CollectorRequestError(
                 HTTPStatus.BAD_REQUEST, "request identity differs from the contract"
             )
@@ -486,6 +492,7 @@ class HookCollector:
             or isinstance(observed_at, bool)
             or not isinstance(raw_hook, Mapping)
         ):
+            discard_authenticated()
             raise CollectorRequestError(
                 HTTPStatus.BAD_REQUEST, "request event fields are invalid"
             )
@@ -527,11 +534,13 @@ class HookCollector:
                         refresh_dt = time.monotonic() - started
                     except BaseException as error:
                         self._mark_degraded("correlation")
+                        discard_authenticated()
                         raise CollectorRequestError(
                             HTTPStatus.SERVICE_UNAVAILABLE,
                             "Mission correlation source failed",
                         ) from error
                 if not self._correlation.accepts(envelope):
+                    discard_authenticated()
                     return b"{}"
 
                 if self._capture_request is not None:
@@ -550,6 +559,7 @@ class HookCollector:
                         self._capture_request(raw_request, envelope)
                     except BaseException:
                         discard_captured()
+                        discard_authenticated()
                         raise
 
                 def sanitized_decision(value: HookEnvelope) -> ResponsePlan:
@@ -612,6 +622,7 @@ class HookCollector:
             raise
         except (TypeError, ValueError) as error:
             discard_captured()
+            discard_authenticated()
             raise CollectorRequestError(
                 HTTPStatus.BAD_REQUEST, "sanitized event is invalid"
             ) from error

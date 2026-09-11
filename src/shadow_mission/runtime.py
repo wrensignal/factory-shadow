@@ -710,18 +710,20 @@ class SubprocessCommandRunner:
         grace_seconds: float,
     ) -> bool:
         deadline = time.monotonic() + grace_seconds
-        try:
-            os.killpg(process.pid, signal.SIGTERM)
-        except OSError:
-            pass
+        if process.poll() is None:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except OSError:
+                pass
         term_deadline = time.monotonic() + max(
             0.0, (deadline - time.monotonic()) / 2
         )
         cls._wait_process_group_exit(process, term_deadline)
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except OSError:
-            pass
+        if process.returncode is None:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except OSError:
+                pass
         stopped = cls._wait_process_group_exit(process, deadline)
         try:
             cls._join_drainers_until(drainers, deadline)
@@ -752,11 +754,6 @@ class SubprocessCommandRunner:
             else:
                 time.sleep(min(0.01, remaining))
 
-    @classmethod
-    def _join_drainers(
-        cls, drainers: tuple[threading.Thread, ...], timeout: float
-    ) -> None:
-        cls._join_drainers_until(drainers, time.monotonic() + timeout)
 
     @staticmethod
     def _join_drainers_until(
@@ -1489,6 +1486,7 @@ class MissionRuntime:
         collector_degraded: str | None = None
         controller_degraded: str | None = None
         review_terminal = False
+        mission_started = False
         unresolved_intervention_ids: tuple[str, ...] = ()
         finalization_forbidden_values: tuple[str, ...] = ()
         completion_blocked = False
@@ -1784,6 +1782,7 @@ class MissionRuntime:
                     termination_check_errors.append(error)
                     return True
 
+            mission_started = True
             mission_result = self.command_runner.run_interruptible(
                 launch_arguments,
                 environment=launch_environment,
@@ -2062,7 +2061,9 @@ class MissionRuntime:
                 record = RunRecord.model_validate(record_value)
             _atomic_private_json(run_dir / "run.json", record.model_dump(mode="json"))
         finally:
-            if lock_acquired:
+            if lock_acquired and (
+                not mission_started or mission_process_stopped is True
+            ):
                 try:
                     lock_path.unlink(missing_ok=True)
                 except OSError as error:

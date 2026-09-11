@@ -16,13 +16,17 @@ from demo.attest_cleanup import (
     produce_cleanup_attestation,
 )
 from demo.compare import compare
+import demo.proof_bundle as proof_bundle_module
+from shadow_mission.correlation import FactoryMissionCorrelationWrapper
 from demo.proof_bundle import (
     PairArtifacts,
     ProofBundleError,
-    _scan_source_archive,
     _reports_equal,
     _rewrite_structured_aliases,
+    _scan_source_archive,
     _validate_cleanup,
+    _validate_public_derivation_bindings,
+    _stable_id,
     build_bundle,
     main,
     verify_bundle,
@@ -429,6 +433,89 @@ def _pair(
         baseline_cleanup_attestation=baseline_cleanup,
         shadow_cleanup_attestation=shadow_cleanup,
     )
+
+
+@pytest.mark.parametrize(
+    ("record_type", "expected"),
+    (
+        (ExchangeProjectionRecord, "projection coverage"),
+        (InterventionLineageRecord, "lineage coverage"),
+    ),
+)
+def test_public_derivation_requires_complete_event_coverage(
+    tmp_path: Path,
+    record_type: type,
+    expected: str,
+) -> None:
+    pair = _pair(tmp_path)
+    run_dir = pair.shadow_run_dir
+    correlation = FactoryMissionCorrelationWrapper.model_validate(
+        json.loads((run_dir / "correlation.json").read_bytes())
+    )
+    raw_exchanges = load_exchanges_bytes(
+        (run_dir / "events.jsonl").read_bytes()
+    )
+    exchanges = tuple(
+        exchange.model_copy(
+            update={
+                "exchange_id": _stable_id(
+                    "exchange",
+                    run_dir.name,
+                    exchange.envelope.event_id,
+                    exchange.response.request_digest,
+                ),
+                "response": exchange.response.model_copy(
+                    update={
+                        "response_id": _stable_id(
+                            "response",
+                            run_dir.name,
+                            exchange.envelope.event_id,
+                            exchange.response.request_digest,
+                        )
+                    }
+                ),
+            }
+        )
+        for exchange in raw_exchanges
+    )
+    exchange_by_sequence = {
+        exchange.ledger_sequence: exchange for exchange in exchanges
+    }
+    records = tuple(
+        (
+            record.model_copy(
+                update={
+                    "exchange_id": exchange_by_sequence[
+                        record.ledger_sequence
+                    ].exchange_id
+                }
+            )
+            if isinstance(record, ExchangeProjectionRecord)
+            else record
+        )
+        for record in load_journal_records(
+            (run_dir / "review.jsonl").read_bytes(),
+            run_id=run_dir.name,
+        )
+        if not isinstance(record, record_type)
+    )
+    if record_type is ExchangeProjectionRecord:
+        records = tuple(
+            record
+            for record in records
+            if not isinstance(
+                record,
+                (RoleDecisionRecord, ExtractionOutcomeRecord, FindingSnapshotRecord),
+            )
+        )
+
+    with pytest.raises(ProofBundleError, match=expected):
+        _validate_public_derivation_bindings(
+            run_id=run_dir.name,
+            correlation=correlation,
+            exchanges=exchanges,
+            review_records=records,
+        )
 
 
 def test_report_comparison_normalizes_json_containers(tmp_path: Path) -> None:
@@ -1321,6 +1408,33 @@ def test_source_archive_scan_rejects_absolute_paths_and_undecodable_members(
     _write_tar(source_archive, {"src/module.py": payload})
 
     with pytest.raises(ProofBundleError, match=message):
+        _scan_source_archive(
+            "source.tar",
+            source_archive,
+            excluded_identifier_hashes=frozenset(),
+        )
+
+
+def test_source_archive_scan_enforces_cumulative_bounds(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_archive = tmp_path / "source.tar"
+    _write_tar(
+        source_archive,
+        {"src/first.py": b"a", "src/second.py": b"b"},
+    )
+    monkeypatch.setattr(proof_bundle_module, "_MAX_SOURCE_MEMBERS", 1)
+    with pytest.raises(ProofBundleError, match="member bound"):
+        _scan_source_archive(
+            "source.tar",
+            source_archive,
+            excluded_identifier_hashes=frozenset(),
+        )
+
+    monkeypatch.setattr(proof_bundle_module, "_MAX_SOURCE_MEMBERS", 10)
+    monkeypatch.setattr(proof_bundle_module, "_MAX_SOURCE_SCAN_BYTES", 1)
+    with pytest.raises(ProofBundleError, match="byte bound"):
         _scan_source_archive(
             "source.tar",
             source_archive,

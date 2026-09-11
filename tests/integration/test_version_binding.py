@@ -1329,6 +1329,7 @@ def test_run_persists_failed_process_stop_measurement(tmp_path: Path) -> None:
         )
     )
     assert persisted == record
+    assert (fixture.state_root / "mission.lock").is_file()
 
 
 def test_run_uses_only_pinned_update_disabled_droid_boundary(tmp_path: Path) -> None:

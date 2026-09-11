@@ -181,6 +181,10 @@ def test_production_factory_assembles_live_controller_and_negative_controls(
         environment["FACTORY_API_KEY"] == "test-only-key"
         for environment in broker_environments
     )
+    assert all(
+        set(environment) == {"FACTORY_API_KEY", "LANG", "LC_ALL", "PATH"}
+        for environment in broker_environments
+    )
     assert decoy_credentials == [{"FACTORY_API_KEY": "test-only-key"}]
     assert binding.forbidden_values == (
         secret,

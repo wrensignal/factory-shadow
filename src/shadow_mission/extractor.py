@@ -28,7 +28,6 @@ from .protocol import (
     is_edit_tool,
     tool_input_paths,
     tool_result_failed,
-    walk_values,
 )
 from .redaction import sanitize_value
 
@@ -558,11 +557,10 @@ class ClaimExtractor:
         }
         records: list[ClaimRecord] = []
         for claim in claims:
+            subject_locator = _normalize_locator(claim.subject_locator)
             criterion = _matching_criterion(
                 claim,
-                criteria_by_locator.get(
-                    _normalize_locator(claim.subject_locator), ()
-                ),
+                criteria_by_locator.get(subject_locator, ()),
             )
             criterion_evidence = (
                 _criterion_evidence(criterion, envelope.session_alias)
@@ -576,8 +574,7 @@ class ClaimExtractor:
                     {
                         milestone_id
                         for item in current_links
-                        if _normalize_locator(item.locator)
-                        == _normalize_locator(claim.subject_locator)
+                        if _normalize_locator(item.locator) == subject_locator
                         for milestone_id in item.milestone_ids
                     }
                 )

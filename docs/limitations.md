@@ -1,6 +1,6 @@
 # Limitations
 
-Shadow Mission `0.1.0b4` is a bounded Factory Guild preview.
+Shadow Mission `0.1.0b5` is a local release candidate for The Factory Guild.
 `pyproject.toml` defines that version.
 `.factory-plugin/plugin.json` stays on the stable `0.1.0` base.
 The preview covers one fixed Factory Mission, seed, evaluator, and review policy.
@@ -88,6 +88,8 @@ Production role mapping reads internal Factory Mission files.
 Factory does not document this relation file format as a public API.
 Shadow binds the format to one approved Droid binary and source digest.
 
+Recorded live bindings remain Droid `0.197.0` and droid-sdk `0.2.0`.
+This candidate does not establish compatibility with Droid `0.209.0` or droid-sdk `0.4.0`.
 A Droid upgrade requires fresh inspection, binding, and evidence.
 Schema, identity, assignment, or file-authority drift stops the workflow.
 Prompt markers and self-reported roles never establish authority.
@@ -130,7 +132,8 @@ They do not measure actual pair cost.
 
 ## Preview version boundary
 
-The public Python distribution uses `0.1.0b4`.
+The local Python release candidate uses `0.1.0b5`.
+The published preview remains `0.1.0b4` until an approved release.
 The Factory plugin and live protocol use the stable `0.1.0` base.
 The beta tag supports installation, inspection, and offline proof.
 It does not authorize a new live Mission.

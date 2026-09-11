@@ -32,7 +32,7 @@ except ImportError:  # pragma: no cover - unsupported non-POSIX host
 _DARWIN_STAGED_EXECUTABLES: dict[tuple[int, int], Path] = {}
 
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from .extractor import (
     BoundaryMetadata,
@@ -260,18 +260,20 @@ class ReplacementEnvironmentTransport:
         process = self._process
         try:
             if process is not None:
-                try:
-                    os.killpg(process.pid, signal.SIGTERM)
-                except OSError:
-                    pass
+                if process.returncode is None:
+                    try:
+                        os.killpg(process.pid, signal.SIGTERM)
+                    except OSError:
+                        pass
                 await self._wait_process_group_exit(
                     process,
                     time.monotonic() + self._grace_period,
                 )
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except OSError:
-                    pass
+                if process.returncode is None:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except OSError:
+                        pass
                 terminated = await self._wait_process_group_exit(
                     process,
                     time.monotonic() + 1.0,
@@ -871,6 +873,7 @@ def _require_executable_digest(
     ):
         raise InternalSessionError("internal Droid executable binding changed")
 
+
 def _is_forbidden_environment_key(key: str) -> bool:
     normalized = key.upper()
     return (
@@ -878,7 +881,21 @@ def _is_forbidden_environment_key(key: str) -> bool:
         or "MISSION" in normalized
         or "CORRELATION" in normalized
         or "COLLECTOR" in normalized
+        or normalized
+        in {
+            "BASH_ENV",
+            "CDPATH",
+            "ENV",
+            "NODE_OPTIONS",
+            "NODE_PATH",
+            "PERL5OPT",
+            "PYTHONHOME",
+            "PYTHONPATH",
+            "RUBYOPT",
+        }
+        or normalized.startswith(("DYLD_", "LD_", "GIT_CONFIG_"))
     )
+
 
 def _is_unapproved_secret_key(key: str) -> bool:
     normalized = key.upper()

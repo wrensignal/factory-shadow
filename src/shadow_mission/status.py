@@ -167,18 +167,45 @@ def terminal_state(
 
 def _unresolved_risk_identities(
     records: Iterable[Any],
-    unresolved_intervention_ids: Iterable[str],
+    interventions: Iterable[InterventionRecord],
     *,
     existing: Iterable[str] = (),
 ) -> tuple[str, ...]:
-    latest_snapshot: FindingSnapshotRecord | None = None
-    for record in records:
-        if isinstance(record, FindingSnapshotRecord):
-            latest_snapshot = record
-    risks = set(existing)
-    risks.update(unresolved_intervention_ids)
-    if latest_snapshot is not None:
-        risks.update(item.dedup_key for item in latest_snapshot.findings)
+    from .reporting import finding_closed
+
+    record_values = tuple(records)
+    intervention_values = tuple(interventions)
+    snapshots = tuple(
+        record
+        for record in record_values
+        if isinstance(record, FindingSnapshotRecord)
+    )
+    known_finding_keys = {
+        finding.dedup_key
+        for snapshot in snapshots
+        for finding in snapshot.findings
+    }
+    known_intervention_ids = {
+        intervention.intervention_id for intervention in intervention_values
+    }
+    risks = {
+        value
+        for value in existing
+        if value not in known_finding_keys and value not in known_intervention_ids
+    }
+    risks.update(
+        intervention.intervention_id
+        for intervention in intervention_values
+        if intervention.state not in {"resolved", "termination_acknowledged"}
+    )
+    if snapshots:
+        for finding in snapshots[-1].findings:
+            if not finding_closed(
+                finding.dedup_key,
+                intervention_values,
+                finding.target_sessions,
+            ):
+                risks.add(finding.dedup_key)
     return tuple(sorted(risks))
 
 
@@ -255,7 +282,7 @@ def terminal_status(
     current_intervention_state = intervention_state(current_interventions)
     unresolved = _unresolved_risk_identities(
         records,
-        current_intervention_state["unresolved_intervention_ids"],
+        current_interventions,
     )
     live_count = run.budget_ledger.get("resulting_live_run_count", 0)
     if not isinstance(live_count, int) or isinstance(live_count, bool) or live_count < 0:
@@ -375,9 +402,10 @@ def load_status(state_root: Path, run_id: str) -> StatusRecord:
             and record.status == "assigned"
             and record.confidence == "high"
         }
-        current_intervention_state = intervention_state(
-            project_intervention_router_state(run_id, records).interventions
-        )
+        current_interventions = project_intervention_router_state(
+            run_id, records
+        ).interventions
+        current_intervention_state = intervention_state(current_interventions)
         value["sessions"] = tuple(
             sorted(
                 set(status.sessions)
@@ -387,7 +415,7 @@ def load_status(state_root: Path, run_id: str) -> StatusRecord:
         value["roles"] = dict(sorted({**status.roles, **roles}.items()))
         value["unresolved_risks"] = _unresolved_risk_identities(
             records,
-            current_intervention_state["unresolved_intervention_ids"],
+            current_interventions,
             existing=active_risks,
         )
         value["intervention_state"] = current_intervention_state

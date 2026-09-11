@@ -11,11 +11,7 @@ from shadow_mission.auth import (
     make_alias,
     sign_event_headers,
 )
-from shadow_mission.collector import (
-    CollectorRequestError,
-    HookCollector,
-    MissionCorrelationRegistry,
-)
+from shadow_mission.collector import HookCollector, MissionCorrelationRegistry
 from shadow_mission.protocol import HookEnvelope, canonical_json
 from shadow_mission.storage import EventLedger
 

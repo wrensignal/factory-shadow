@@ -654,6 +654,8 @@ def test_extraction_uses_replacement_environment_and_locks_tools_before_prompt(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("AMBIENT_SECRET", "must-not-reach-child")
+    monkeypatch.setenv("NODE_OPTIONS", "--require=/tmp/untrusted.js")
+    monkeypatch.setenv("DYLD_INSERT_LIBRARIES", "/tmp/untrusted.dylib")
     session = FakeSession(
         initial_tools=("Read", "Execute"),
         remaining_tools=("Read", "Execute"),
@@ -671,6 +673,8 @@ def test_extraction_uses_replacement_environment_and_locks_tools_before_prompt(
     assert "AMBIENT_SECRET" not in environment
     assert "OPENAI_API_KEY" not in environment
     assert "AWS_SECRET_ACCESS_KEY" not in environment
+    assert "NODE_OPTIONS" not in environment
+    assert "DYLD_INSERT_LIBRARIES" not in environment
     assert not any(
         marker in key.upper()
         for key in environment

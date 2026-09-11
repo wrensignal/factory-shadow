@@ -128,6 +128,46 @@ def test_interruptible_runner_terminates_mission_descendants(
     assert heartbeat.stat().st_size == size_after_return
 
 
+def test_termination_never_signals_reused_group_after_leader_exit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signals: list[int] = []
+
+    class Process:
+        pid = 12345
+        returncode: int | None = None
+
+        def poll(self) -> int | None:
+            return self.returncode
+
+    process = Process()
+    waits = 0
+
+    def wait_for_exit(
+        candidate: Process,
+        _deadline: float,
+    ) -> bool:
+        nonlocal waits
+        waits += 1
+        candidate.returncode = 0
+        return False
+
+    monkeypatch.setattr(runtime_module.os, "killpg", lambda _pid, sig: signals.append(sig))
+    monkeypatch.setattr(
+        SubprocessCommandRunner,
+        "_wait_process_group_exit",
+        staticmethod(wait_for_exit),
+    )
+
+    stopped = SubprocessCommandRunner._terminate_process_group(
+        process, (), 0.1
+    )
+
+    assert stopped is False
+    assert signals == [runtime_module.signal.SIGTERM]
+    assert waits == 2
+
+
 def test_completed_run_persists_terminal_status_after_controller_stop(
     tmp_path: Path,
 ) -> None:

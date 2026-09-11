@@ -518,6 +518,63 @@ def test_finalization_rejects_live_process_or_hooks_before_export(
     assert events == []
 
 
+def test_missing_relation_binding_stops_before_source_export(
+    tmp_path: Path,
+) -> None:
+    source_repo, run_dir, evaluator, config = finalization_inputs(tmp_path)
+    run_path = run_dir / "run.json"
+    run_value = json.loads(run_path.read_bytes())
+    run_value["mission_relation_record_digest"] = None
+    run_value.pop("record_digest")
+    run_value["record_digest"] = hashlib.sha256(
+        canonical_json(run_value)
+    ).hexdigest()
+    run_path.write_bytes(canonical_json(run_value) + b"\n")
+    events: list[str] = []
+
+    with pytest.raises(FinalizationError, match="relation"):
+        _finalize(
+            tmp_path,
+            source_repo=source_repo,
+            run_dir=run_dir,
+            evaluator=evaluator,
+            config=config,
+            evaluation_driver=OrderedEvaluatorDriver(
+                {"status": "pass"},
+                events,
+                run_dir / "pre-evaluation.json",
+            ),
+        )
+
+    assert events == []
+    assert not (run_dir / "final-source").exists()
+
+
+def test_missing_relation_record_stops_before_source_export(
+    tmp_path: Path,
+) -> None:
+    source_repo, run_dir, evaluator, config = finalization_inputs(tmp_path)
+    (run_dir / "correlation.json").unlink()
+    events: list[str] = []
+
+    with pytest.raises(FinalizationError, match="relation"):
+        _finalize(
+            tmp_path,
+            source_repo=source_repo,
+            run_dir=run_dir,
+            evaluator=evaluator,
+            config=config,
+            evaluation_driver=OrderedEvaluatorDriver(
+                {"status": "pass"},
+                events,
+                run_dir / "pre-evaluation.json",
+            ),
+        )
+
+    assert events == []
+    assert not (run_dir / "final-source").exists()
+
+
 def test_changed_approved_evaluator_stops_before_evaluator_vm_start(
     tmp_path: Path,
 ) -> None:

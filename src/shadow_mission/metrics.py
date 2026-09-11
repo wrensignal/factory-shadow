@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import Any, Literal, Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict
@@ -258,12 +257,27 @@ def compute_outcome_metrics(
         precision = _available(len(independently_confirmed) / len(judged))
         false_intervention_count = _available(len(false_interventions))
 
-    replayed_guidance = {
+    replayed_guidance_ids = {
         guidance_id
         for exchange in exchanges
         for guidance_id in exchange.response.guidance_ids
     }
-    if len(replayed_guidance) > len(delivered):
+    replayed_transition_ids = {
+        transition_id
+        for exchange in exchanges
+        for transition_id in exchange.response.transition_ids
+    }
+    delivered_transition_ids = {
+        transition.transition_id
+        for item in delivered
+        for transition in item.transition_history
+        if transition.state == "delivered" and transition.action == "delivered"
+    }
+    if (
+        len(replayed_guidance_ids) > len(delivered)
+        or len(delivered_transition_ids) != len(delivered)
+        or not delivered_transition_ids <= replayed_transition_ids
+    ):
         precision = _unavailable("guidance lineage is incomplete")
 
     shadow_archive = _record_value(shadow_record, "final_source_archive_digest")

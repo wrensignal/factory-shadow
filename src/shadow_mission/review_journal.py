@@ -523,12 +523,6 @@ class ReviewJournal:
         self._prepare_path()
         self._recover()
 
-    @property
-    def size_bytes(self) -> int:
-        try:
-            return self.path.stat().st_size
-        except FileNotFoundError:
-            return 0
 
     def records(self) -> tuple[JournalRecord, ...]:
         with self._lock:

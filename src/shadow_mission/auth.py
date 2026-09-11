@@ -397,6 +397,7 @@ class EventAuthenticator:
         self._max_skew_seconds = max_skew_seconds
         self._nonces: set[str] = set()
         self._event_digests: dict[str, str] = {}
+        self._event_nonces: dict[str, set[str]] = {}
         self._lock = Lock()
 
     def verify(
@@ -424,8 +425,10 @@ class EventAuthenticator:
             run_id = payload["run_id"]
         except (json.JSONDecodeError, KeyError, TypeError) as error:
             raise AuthenticationError("event body lacks run or event identity") from error
-        if not isinstance(event_id, str) or not event_id:
+        if not isinstance(event_id, str) or not 1 <= len(event_id) <= 160:
             raise AuthenticationError("invalid event ID")
+        if not isinstance(nonce, str) or not 1 <= len(nonce) <= 128:
+            raise AuthenticationError("invalid event nonce")
         if run_id != self._descriptor["run_id"]:
             raise AuthenticationError("event belongs to another run")
         message = _event_message(
@@ -450,7 +453,19 @@ class EventAuthenticator:
                 raise AuthenticationError("event ID reused with different content")
             self._nonces.add(nonce)
             self._event_digests[event_id] = digest
+            self._event_nonces.setdefault(event_id, set()).add(nonce)
         return event_id
+
+    def discard(self, event_id: str, body: bytes) -> None:
+        """Release replay state for one authenticated event rejected before persistence."""
+
+        digest = hashlib.sha256(body).hexdigest()
+        with self._lock:
+            if self._event_digests.get(event_id) != digest:
+                return
+            self._event_digests.pop(event_id, None)
+            for nonce in self._event_nonces.pop(event_id, ()):
+                self._nonces.discard(nonce)
 
 
 def write_latch(

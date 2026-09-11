@@ -11,8 +11,10 @@ from pathlib import Path
 import pytest
 
 from shadow_mission.source_export import (
+    MAX_SOURCE_ARCHIVE_BYTES,
     SourceArchiveError,
     safe_extract_source,
+    validate_member_name,
     validate_source_archive,
 )
 
@@ -91,15 +93,44 @@ def test_final_checkout_export_is_deterministic_and_safe_to_extract(tmp_path: Pa
     assert (extracted / "src/résumé.py").read_text() == "CURRENCY = 'USD'\n"
 
 
-@pytest.mark.parametrize("unsafe_name", [".env", "credentials", "access-token.txt"])
-def test_export_rejects_credential_named_files(tmp_path: Path, unsafe_name: str) -> None:
+@pytest.mark.parametrize(
+    "unsafe_name",
+    [
+        ".env",
+        "credentials",
+        "credentials.json",
+        "client_secret.json",
+        ".netrc",
+        ".config/gh/hosts.yml",
+        ".local/share/keyrings/login.keyring",
+        "service-account.json",
+        "access-token.txt",
+    ],
+)
+def test_export_rejects_credential_named_files(
+    tmp_path: Path,
+    unsafe_name: str,
+) -> None:
     repo = make_repo(tmp_path)
-    (repo / unsafe_name).write_text("private\n", encoding="utf-8")
+    target = repo / unsafe_name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("private\n", encoding="utf-8")
 
     _, _, result = export(repo, tmp_path / "output")
 
     assert result.returncode == 1
-    assert "credential-like" in result.stdout
+    assert "credential" in result.stdout
+
+
+@pytest.mark.parametrize(
+    "unsafe_name",
+    (".config/gh/hosts.yml", ".local/share/keyrings/login.keyring"),
+)
+def test_host_validation_rejects_credential_store_paths(
+    unsafe_name: str,
+) -> None:
+    with pytest.raises(SourceArchiveError, match="credential store"):
+        validate_member_name(unsafe_name)
 
 
 def test_export_rejects_links_and_secret_canaries(tmp_path: Path) -> None:
@@ -112,7 +143,10 @@ def test_export_rejects_links_and_secret_canaries(tmp_path: Path) -> None:
     assert "symbolic link" in linked.stdout
 
     (repo / "link.py").unlink()
-    (repo / "src/payment.py").write_text("prefix-secret-canary-suffix\n", encoding="utf-8")
+    (repo / "src/payment.py").write_text(
+        "prefix-secret-canary-suffix\n",
+        encoding="utf-8",
+    )
     _, _, canary = export(
         repo,
         tmp_path / "canary",
@@ -121,6 +155,19 @@ def test_export_rejects_links_and_secret_canaries(tmp_path: Path) -> None:
     )
     assert canary.returncode == 1
     assert "secret canary" in canary.stdout
+
+
+def test_host_validation_rejects_oversized_archive_file(
+    tmp_path: Path,
+) -> None:
+    repo = make_repo(tmp_path)
+    archive, manifest, result = export(repo, tmp_path / "output")
+    assert result.returncode == 0
+    with archive.open("wb") as handle:
+        handle.truncate(MAX_SOURCE_ARCHIVE_BYTES + 1)
+
+    with pytest.raises(SourceArchiveError, match="byte limit"):
+        validate_source_archive(archive, manifest)
 
 
 def test_host_validation_rejects_unmanifested_or_unsafe_archive_member(

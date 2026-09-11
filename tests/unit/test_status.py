@@ -59,3 +59,26 @@ def test_final_and_active_projections_share_unresolved_risk_identities(
     expected = ("a" * 64, "intervention-worker-b")
     assert active_status.unresolved_risks == expected
     assert final_status.unresolved_risks == expected
+
+
+def test_resolved_finding_is_absent_from_unresolved_risks(
+    tmp_path: Path,
+) -> None:
+    state_root = tmp_path / "state"
+    runs_root = state_root / "runs"
+    runs_root.mkdir(parents=True)
+    run_id = "run-status-resolved"
+    make_final_run_dir(
+        runs_root,
+        run_id=run_id,
+        journal_setup=lambda journal: append_mixed_finding(
+            journal,
+            run_id,
+            all_resolved=True,
+        ),
+    )
+
+    final_status = load_status(state_root, run_id)
+
+    assert final_status.unresolved_risks == ()
+    assert final_status.intervention_state["unresolved"] == 0

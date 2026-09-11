@@ -18,6 +18,18 @@ from shadow_mission.redaction import (
         "session_id=raw-session-123",
         "transcript_path=/Users/operator/private/transcript.jsonl",
         "-----BEGIN PRIVATE KEY-----\nprivate\n-----END PRIVATE KEY-----",
+        "AWS_ACCESS_KEY_ID=" + "AKIA" + "IOSFODNN7EXAMPLE",
+        "github_pat=" + "ghp_" + "1234567890abcdefghijklmnopqrstuvwxyz",
+        "Cookie: session=private-cookie-value",
+        "client_secret=private-client-secret",
+        "API_KEY=private-value",
+        'FACTORY_API_KEY="first secret value"',
+        "password='first secret value'",
+        "Basic " + "YTpi",
+        "github_pat_" + "abcdefghijklmnopqrstuvwxyz1234567890",
+        "xapp-" + "1234567890-secret",
+        "xoxe.xoxp-" + "1234567890-secret",
+        "xoxc-" + "1234567890-secret",
     ],
 )
 def test_secret_canary_corpus_is_redacted_before_persistence(secret: str) -> None:
@@ -26,6 +38,17 @@ def test_secret_canary_corpus_is_redacted_before_persistence(secret: str) -> Non
     assert status == "redacted"
     assert secret not in str(value)
 
+
+
+@pytest.mark.parametrize(
+    "key",
+    ("aws_access_key_id", "cookie", "github_pat", "client_secret"),
+)
+def test_structured_credential_keys_are_redacted(key: str) -> None:
+    value, status = sanitize_value({key: "private-value"})
+
+    assert status == "redacted"
+    assert value == {key: "[REDACTED]"}
 
 def test_intervention_markers_are_removed_from_later_model_input() -> None:
     assert (

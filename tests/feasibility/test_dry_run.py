@@ -14,28 +14,22 @@ from shadow_mission.feasibility import (
 )
 
 
-def test_dry_run_exercises_harness_without_claiming_live_feasibility(
+def test_dry_run_rejects_historical_fixture_for_current_artifact(
     tmp_path: Path,
 ) -> None:
     output = tmp_path / "offline-result.json"
-    result = run_dry_run(
-        fixture_path=Path("tests/fixtures/feasibility"),
-        fixture_manifest_pin=Path("tests/fixtures/feasibility-manifest.sha256"),
-        output_path=output,
-        project_root=Path.cwd(),
-    )
 
-    assert result["status"] == "offline-harness-pass"
-    assert result["live_gate_verdict"] == "unverified"
-    assert result["live_run_count_incremented"] is False
-    assert result["external_network_calls"] == 0
-    assert result["factory_calls"] == 0
-    assert result["model_calls"] == 0
-    assert result["checks"]["target_only_guidance"] == "pass"
-    assert result["checks"]["collector_outage_latch"] == "pass"
-    assert result["checks"]["self_session_exclusion"] == "pass"
-    assert json.loads(output.read_text()) == result
-    assert os.stat(output).st_mode & 0o777 == 0o600
+    with pytest.raises(
+        GateClassificationError, match="profile installed artifact digest is stale"
+    ):
+        run_dry_run(
+            fixture_path=Path("tests/fixtures/feasibility"),
+            fixture_manifest_pin=Path("tests/fixtures/feasibility-manifest.sha256"),
+            output_path=output,
+            project_root=Path.cwd(),
+        )
+
+    assert not output.exists()
 
 
 def test_private_result_writer_rejects_symlink(tmp_path: Path) -> None:
@@ -64,28 +58,7 @@ def test_private_result_writer_accepts_sticky_shared_directory(
     assert os.stat(output).st_mode & 0o777 == 0o600
 
 
-def test_dry_run_output_contains_no_sealed_secret_or_raw_identifiers(
-    tmp_path: Path,
-) -> None:
-    output = tmp_path / "offline-result.json"
-    run_dry_run(
-        fixture_path=Path("tests/fixtures/feasibility"),
-        fixture_manifest_pin=Path("tests/fixtures/feasibility-manifest.sha256"),
-        output_path=output,
-        project_root=Path.cwd(),
-    )
-    encoded = output.read_text()
-
-    for forbidden in (
-        "sk-shadow-feasibility-NEVER-PERSIST-7319",
-        "worker-a-raw",
-        "worker-b-raw",
-        "SHADOW_MISSION_RUN_SECRET",
-    ):
-        assert forbidden not in encoded
-
-
-def test_documented_cli_finds_external_pin_in_guest_layout(
+def test_documented_cli_rejects_historical_fixture_in_guest_layout(
     tmp_path: Path,
 ) -> None:
     guest_input = tmp_path / "input"
@@ -116,9 +89,9 @@ def test_documented_cli_finds_external_pin_in_guest_layout(
         check=False,
     )
 
-    assert completed.returncode == 0, completed.stderr
-    assert json.loads(completed.stdout)["status"] == "offline-harness-pass"
-    assert json.loads(output.read_text())["status"] == "offline-harness-pass"
+    assert completed.returncode == 2
+    assert "profile installed artifact digest is stale" in completed.stderr
+    assert not output.exists()
 
 
 def test_live_cli_rejects_incomplete_authorization_before_droid() -> None:

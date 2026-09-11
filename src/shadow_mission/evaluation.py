@@ -149,13 +149,14 @@ def _append_bounded_output(buffer: bytearray, chunk: bytes, limit: int) -> bool:
 
 
 def _terminate_process(process: subprocess.Popen[bytes]) -> None:
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except (ProcessLookupError, PermissionError):
+    if process.poll() is None:
         try:
-            process.kill()
-        except OSError:
-            pass
+            os.killpg(process.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            try:
+                process.kill()
+            except OSError:
+                pass
     process.wait()
 
 

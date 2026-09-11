@@ -111,30 +111,34 @@ def _run_mission(arguments: argparse.Namespace) -> int:
         role: getattr(arguments, f"{role}_reasoning")
         for role in ("orchestrator", "worker", "validator", "extractor", "probe")
     }
-    request = MissionRequest(
-        repo=arguments.repo,
-        mission_file=arguments.mission_file,
-        evaluator=arguments.evaluator,
-        profile_manifest=arguments.profile_manifest,
-        isolation_manifest=arguments.isolation_manifest,
-        lima_config=arguments.lima_config,
-        feasibility_record=arguments.feasibility_record,
-        release_preflight=arguments.release_preflight,
-        factory_mission_root=(
-            arguments.factory_mission_root
-            if arguments.factory_mission_root is not None
-            else host_factory_mission_root()
-        ),
-        droid_path=arguments.droid_path,
-        models=models,
-        reasoning=reasoning,
-        baseline_record=arguments.baseline_record,
-    )
-    state_root = _state_root(arguments.repo, arguments.state_root)
-    runtime = MissionRuntime(
-        arguments.plugin_root,
-        state_root=state_root,
-    )
+    try:
+        request = MissionRequest(
+            repo=arguments.repo,
+            mission_file=arguments.mission_file,
+            evaluator=arguments.evaluator,
+            profile_manifest=arguments.profile_manifest,
+            isolation_manifest=arguments.isolation_manifest,
+            lima_config=arguments.lima_config,
+            feasibility_record=arguments.feasibility_record,
+            release_preflight=arguments.release_preflight,
+            factory_mission_root=(
+                arguments.factory_mission_root
+                if arguments.factory_mission_root is not None
+                else host_factory_mission_root()
+            ),
+            droid_path=arguments.droid_path,
+            models=models,
+            reasoning=reasoning,
+            baseline_record=arguments.baseline_record,
+        )
+        state_root = _state_root(arguments.repo, arguments.state_root)
+        runtime = MissionRuntime(
+            arguments.plugin_root,
+            state_root=state_root,
+        )
+    except (PreflightError, OSError, ValueError) as error:
+        print(f"preflight stopped: {error}", file=sys.stderr)
+        return 2
     mission_error: MissionExecutionError | None = None
     try:
         record = runtime.run(

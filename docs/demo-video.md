@@ -1,7 +1,9 @@
 # Demonstration video script
 
-Record a short artifact walkthrough for the `v0.1.0b4` Guild preview.
-Use only the released source, aggregate record, and proof bundles.
+Record a short artifact walkthrough for The Factory Guild's `v0.1.0b5` release candidate.
+Use the candidate source and unchanged historical release assets.
+Complete installation and asset downloads before recording.
+Keep the recording offline.
 Do not stage a new intervention or type a result manually.
 
 Target length is about three minutes.
@@ -32,23 +34,26 @@ Narration:
 
 > Factory Missions divide work across several sessions. Shadow Mission reviews those sessions together. This fixed demonstration tests one dollars-to-cents conflict across API, webhook, and export boundaries.
 
-Show the repository URL and tag:
+Show the repository URL and planned release tag:
 
-- `https://github.com/WrenSignal/factory-shadow`;
-- `v0.1.0b4`.
+- The repository is `https://github.com/WrenSignal/factory-shadow`.
+- The planned release tag is `v0.1.0b5`.
 
-## Factory installation
+## Offline reviewer setup
 
-Show these commands without running a paid Mission:
+Complete the [offline reviewer setup](reproducibility.md) before recording.
+Install `shadow-mission[proof]` from the candidate source.
+Do not install a Factory plugin for this walkthrough.
+Show the installed package check and proof entry path:
 
 ```sh
-droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b4'
-droid plugin install shadow-mission@factory-shadow@v0.1.0b4 --scope user
+.venv/bin/python ci/verify_release.py --tag v0.1.0b5
+.venv/bin/python demo/proof_bundle.py verify --help
 ```
 
 Narration:
 
-> Factory installs the plugin from a tagged Marketplace. Its hook stays silent without a signed Shadow runtime activation.
+> The proof extra supplies PyYAML for the offline verifier. The candidate source contains the proof script. These checks need no Factory account or model call.
 
 ## Real review path
 
@@ -74,8 +79,8 @@ Narration:
 
 > This pair starts both sides from matching frozen inputs. Its baseline failed the seeded assertion. Its Shadow run passed that assertion.
 
-Show final-source validation before the evaluator result.
-Show evaluator VM deletion before persisted success.
+Show the recorded final-source validation before the evaluator result.
+Show the recorded evaluator VM deletion before the persisted success record.
 Do not show hidden evaluator source.
 
 ## Integrity refusal
@@ -123,7 +128,7 @@ Do not show either private run directory.
 
 End on the repository URL, MIT license, and both bundle digests.
 Tag `@FactoryAI` in the published post.
-Link the release page and attach this unedited clip.
+Link the release candidate page and attach this unedited clip only after publication approval.
 
 Final narration:
 

@@ -490,14 +490,15 @@ def resolve_evidence_authority(
     values_and_evidence: Iterable[tuple[str, EvidenceRecord]],
 ) -> AuthorityResolution:
     """Resolve a unique top authoritative value, but never an equal-level conflict."""
-    items = tuple(values_and_evidence)
-    if not items:
+    classified = tuple(
+        (value, classify_evidence_authority(record))
+        for value, record in values_and_evidence
+    )
+    if not classified:
         return AuthorityResolution("absent", EvidenceAuthority.UNKNOWN)
-    highest = max(classify_evidence_authority(record) for _, record in items)
+    highest = max(authority for _, authority in classified)
     top_values = {
-        value
-        for value, record in items
-        if classify_evidence_authority(record) == highest
+        value for value, authority in classified if authority == highest
     }
     if len(top_values) > 1:
         return AuthorityResolution("unresolved_same_authority", highest)

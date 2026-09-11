@@ -209,11 +209,19 @@ def test_unseen_event_fails_when_correlation_refresh_is_unavailable(
             headers(body, secret, descriptor, nonce="nonce-first"),
             body,
         )
-    collector.stop()
 
     assert caught.value.status == 503
     assert refresh_calls == 1
     assert collector.ledger.exchanges() == ()
+    with pytest.raises(CollectorRequestError) as retry:
+        collector.process(
+            headers(body, secret, descriptor, nonce="nonce-first"),
+            body,
+        )
+
+    assert retry.value.status == 503
+    assert refresh_calls == 2
+    collector.stop()
 
 
 def test_changed_body_with_same_event_id_is_rejected(tmp_path: Path) -> None:

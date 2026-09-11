@@ -38,6 +38,7 @@ from shadow_mission.protocol import (
     hook_response_digest,
     hook_envelope_digest,
 )
+from shadow_mission.production import _classify_probe_risk
 from shadow_mission.review import (
     MissionReviewController,
     MissionReviewError,
@@ -86,6 +87,18 @@ from shadow_mission.transcript import (
     TranscriptReader,
 )
 
+
+
+def test_production_probe_risk_uses_the_finding_rule() -> None:
+    finding = _finding("risk-classification")
+
+    assert _classify_probe_risk(finding) == "public_contract"
+    assert _classify_probe_risk(
+        replace(finding, rule="shared_assumption")
+    ) == "public_contract"
+    assert _classify_probe_risk(
+        replace(finding, rule="validation_overlap")
+    ) == "explicit_acceptance"
 RUN_ID = "run-review-controller"
 
 
@@ -1136,6 +1149,40 @@ def test_authenticated_raw_path_is_consumed_by_matching_commit_and_not_persisted
     assert str(transcript).encode() not in persisted
     assert raw_session_id.encode() not in persisted
     assert controller.cursor_offsets()[exchange.envelope.transcript_alias] > 0
+
+
+def test_primary_transcript_identity_is_one_to_one_for_the_run(
+    tmp_path: Path,
+) -> None:
+    controller = _controller(tmp_path, transcript_mode="primary")
+    first = _envelope(1, session_alias="session-worker-a")
+    first_request = HookRequest(
+        run_id=RUN_ID,
+        event_id=first.event_id,
+        observed_at=first.observed_at,
+        hook_event_name=first.hook_event_name,
+        session_id="raw-worker-a",
+        transcript_path=str(tmp_path / "worker-a.jsonl"),
+        cwd=str(tmp_path),
+    )
+    controller.capture_request(first_request, first)
+    second = _envelope(2, session_alias="session-worker-b").model_copy(
+        update={"transcript_alias": first.transcript_alias}
+    )
+    second_request = HookRequest(
+        run_id=RUN_ID,
+        event_id=second.event_id,
+        observed_at=second.observed_at,
+        hook_event_name=second.hook_event_name,
+        session_id="raw-worker-b",
+        transcript_path=first_request.transcript_path,
+        cwd=str(tmp_path),
+    )
+
+    with pytest.raises(MissionReviewError, match="identity changed"):
+        controller.capture_request(second_request, second)
+
+    assert controller.non_releasable_reason == "transcript_identity_conflict"
 
 
 def test_rejected_primary_record_advances_cursor_and_fails_release_closed(

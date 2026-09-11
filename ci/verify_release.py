@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import importlib.metadata
 import json
 import os
@@ -9,6 +11,8 @@ import stat
 import subprocess
 import tarfile
 import zipfile
+from email.parser import BytesParser
+from email.policy import default as email_policy
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Mapping
 
@@ -53,7 +57,30 @@ SECRET_PATTERNS = (
     re.compile(rb"\bghp_[A-Za-z0-9]{30,}\b"),
     re.compile(rb"\bgithub_pat_[A-Za-z0-9_]{40,}\b"),
     re.compile(rb"\bAKIA[0-9A-Z]{16}\b"),
+    re.compile(
+        rb"\b(?:xox[baprs]-|xox[cd]-|xapp-|xoxe(?:\.[A-Za-z0-9-]+)?-)"
+        rb"[A-Za-z0-9-]{10,}\b"
+    ),
 )
+_BASIC_AUTH_CANDIDATE = re.compile(
+    rb"(?i)\bBasic\s+([A-Za-z0-9+/]{4,}={0,2})"
+)
+
+
+def contains_secret(payload: bytes) -> bool:
+    if any(pattern.search(payload) for pattern in SECRET_PATTERNS):
+        return True
+    for match in _BASIC_AUTH_CANDIDATE.finditer(payload):
+        try:
+            decoded = base64.b64decode(match.group(1), validate=True)
+        except (binascii.Error, ValueError):
+            continue
+        username, separator, password = decoded.partition(b":")
+        if separator and username and password:
+            return True
+    return False
+
+
 SYNTHETIC_SECRET_CANARIES = (
     b"sk-shadow-feasibility-NEVER-PERSIST-7319",
 )
@@ -116,9 +143,8 @@ def _scan_payload(name: str, payload: bytes) -> None:
     candidate = payload
     for canary in SYNTHETIC_SECRET_CANARIES:
         candidate = candidate.replace(canary, b"")
-    for pattern in SECRET_PATTERNS:
-        if pattern.search(candidate):
-            raise ReleaseVerificationError(f"secret-like value in artifact member: {name}")
+    if contains_secret(candidate):
+        raise ReleaseVerificationError(f"secret-like value in artifact member: {name}")
 
 
 def verify_repository_tree(root: Path = PROJECT_ROOT) -> None:
@@ -201,11 +227,10 @@ def verify_repository_tree(root: Path = PROJECT_ROOT) -> None:
                 raise ReleaseVerificationError(
                     f"secret canary in repository release file: {name}"
                 )
-        for pattern in SECRET_PATTERNS:
-            if pattern.search(candidate):
-                raise ReleaseVerificationError(
-                    f"secret-like value in repository release file: {name}"
-                )
+        if contains_secret(candidate):
+            raise ReleaseVerificationError(
+                f"secret-like value in repository release file: {name}"
+            )
 
 
 def _wheel_payloads(path: Path) -> Iterable[tuple[str, bytes]]:
@@ -219,13 +244,19 @@ def _wheel_payloads(path: Path) -> Iterable[tuple[str, bytes]]:
 
 def _source_payloads(path: Path) -> Iterable[tuple[str, bytes]]:
     with tarfile.open(path, mode="r:gz") as archive:
-        for member in archive.getmembers():
+        members = archive.getmembers()
+        for member in members:
             _regular_archive_name(member.name)
             if member.issym() or member.islnk():
                 raise ReleaseVerificationError(
                     f"linked source artifact member: {member.name}"
                 )
-            if not member.isfile():
+            if not (member.isdir() or member.isfile()):
+                raise ReleaseVerificationError(
+                    f"non-regular source artifact member: {member.name}"
+                )
+        for member in members:
+            if member.isdir():
                 continue
             extracted = archive.extractfile(member)
             if extracted is None:
@@ -235,22 +266,65 @@ def _source_payloads(path: Path) -> Iterable[tuple[str, bytes]]:
             yield member.name, extracted.read()
 
 
-def verify_artifacts(dist: Path) -> None:
+def _verify_artifact_metadata(name: str, payload: bytes, version: str) -> None:
+    metadata = BytesParser(policy=email_policy).parsebytes(payload)
+    names = metadata.get_all("Name", ())
+    versions = metadata.get_all("Version", ())
+    if metadata.defects or len(names) != 1 or len(versions) != 1:
+        raise ReleaseVerificationError(f"artifact package metadata is invalid: {name}")
+    package_name = re.sub(r"[-_.]+", "-", str(names[0])).lower()
+    if package_name != EXPECTED_PLUGIN_NAME:
+        raise ReleaseVerificationError(f"artifact package name differs: {name}")
+    if str(versions[0]) != version:
+        raise ReleaseVerificationError(f"artifact package version differs: {name}")
+
+
+def verify_artifacts(dist: Path, *, version: str | None = None) -> None:
+    if version is None:
+        version = importlib.metadata.version(EXPECTED_PLUGIN_NAME)
+    _release_base_version(version)
+    distribution_roots = {
+        f"{EXPECTED_PLUGIN_NAME}-{version}",
+        f"{EXPECTED_PLUGIN_NAME.replace('-', '_')}-{version}",
+    }
     archives = tuple(sorted(path for path in dist.iterdir() if path.is_file()))
     wheels = tuple(path for path in archives if path.suffix == ".whl")
     sources = tuple(path for path in archives if path.name.endswith(".tar.gz"))
     if len(wheels) != 1 or len(sources) != 1 or len(archives) != 2:
         raise ReleaseVerificationError("dist must contain one wheel and one source archive")
-    for archive, payloads in (
-        (wheels[0], _wheel_payloads(wheels[0])),
-        (sources[0], _source_payloads(sources[0])),
+    for archive, payloads, is_wheel in (
+        (wheels[0], _wheel_payloads(wheels[0]), True),
+        (sources[0], _source_payloads(sources[0]), False),
     ):
         count = 0
+        metadata_count = 0
         for name, payload in payloads:
             _scan_payload(name, payload)
             count += 1
+            member = PurePosixPath(name)
+            if is_wheel:
+                is_metadata = (
+                    len(member.parts) == 2
+                    and member.parent.name.endswith(".dist-info")
+                    and member.name == "METADATA"
+                )
+                metadata_root = member.parent.name.removesuffix(".dist-info")
+            else:
+                is_metadata = len(member.parts) == 2 and member.name == "PKG-INFO"
+                metadata_root = member.parent.name
+                if member.name == "PKG-INFO" and member.parent.name.endswith(".egg-info"):
+                    _verify_artifact_metadata(name, payload, version)
+            if is_metadata:
+                _verify_artifact_metadata(name, payload, version)
+                if metadata_root not in distribution_roots:
+                    raise ReleaseVerificationError(f"artifact metadata path differs: {name}")
+                metadata_count += 1
         if count == 0:
             raise ReleaseVerificationError(f"empty release artifact: {archive.name}")
+        if metadata_count != 1:
+            raise ReleaseVerificationError(
+                f"artifact must contain exactly one package metadata member: {archive.name}"
+            )
 
 
 def _load_yaml(path: Path) -> dict[str, object]:
@@ -407,7 +481,7 @@ def verify_release(*, tag: str | None, dist: Path | None) -> None:
     if tag is not None and tag.removeprefix("v") != version:
         raise ReleaseVerificationError("release tag differs from package version")
     if dist is not None:
-        verify_artifacts(dist)
+        verify_artifacts(dist, version=version)
 
 
 def main() -> int:

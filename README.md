@@ -41,23 +41,41 @@ The released bundles record `resolved` interventions in pairs 47, 49, and 55.
 No seeded finding group fully resolved.
 `demo/compare.py` therefore refuses a bound causal claim.
 
-## Install the preview
+## Install the release candidate
 
-Add the tagged repository as a Factory Marketplace.
-Then install the `shadow-mission` plugin at user scope.
+The local release candidate is `0.1.0b5` for The Factory Guild.
+Publication and tag creation still need direct approval.
+These installation commands target `v0.1.0b5` after publication.
+The [published `v0.1.0b4` release](https://github.com/WrenSignal/factory-shadow/releases/tag/v0.1.0b4) retains the historical proof assets.
+
+### Offline reviewer path
+
+Install the Python CLI with its `proof` extra.
+Keep the tagged source because it contains `demo/proof_bundle.py` and `ci/verify_release.py`.
+The wheel does not contain these scripts.
 
 ```sh
-droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b4'
-droid plugin install shadow-mission@factory-shadow@v0.1.0b4 --scope user
-```
-
-Install the companion Python CLI from the same tag.
-
-```sh
+git clone https://github.com/WrenSignal/factory-shadow.git
+cd factory-shadow
+git checkout --detach v0.1.0b5
 python3 -m venv .venv
 .venv/bin/python -m pip install \
-  'git+https://github.com/WrenSignal/factory-shadow.git@v0.1.0b4'
+  'shadow-mission[proof] @ git+https://github.com/WrenSignal/factory-shadow.git@v0.1.0b5'
 .venv/bin/shadow --help
+.venv/bin/python demo/proof_bundle.py verify --help
+```
+
+The `proof` extra supplies PyYAML for the verifier.
+This reviewer path needs no Factory plugin installation.
+
+### Optional Factory plugin
+
+These commands change Factory plugin state.
+They are not part of offline proof verification.
+
+```sh
+droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b5'
+droid plugin install shadow-mission@factory-shadow@v0.1.0b5 --scope user
 ```
 
 The plugin installs Factory lifecycle hooks.
@@ -132,7 +150,7 @@ Read [Privacy](docs/privacy.md) and [Limitations](docs/limitations.md) before an
 python3 -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check -e '.[dev]'
 .venv/bin/python -m pytest tests/unit tests/integration
-.venv/bin/python ci/verify_release.py --tag v0.1.0b4
+.venv/bin/python ci/verify_release.py --tag v0.1.0b5
 ```
 
 These checks make no Factory or model call.
@@ -146,6 +164,7 @@ Do not run a paid Mission without direct authorization.
 - [Reproducibility](docs/reproducibility.md)
 - [Demonstration video script](docs/demo-video.md)
 - [Public post](docs/public-post.md)
+- [The Factory Guild application draft](docs/guild-application.md)
 
 ## License
 

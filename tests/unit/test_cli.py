@@ -320,6 +320,49 @@ def test_mission_exit_contract_covers_success_failure_and_preflight(
     assert "preflight stopped" in capsys.readouterr().err
 
 
+def test_mission_constructor_preflight_failure_exits_two(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arguments = [
+        "mission",
+        "--repo", str(tmp_path / "repo"),
+        "--file", str(tmp_path / "mission.md"),
+        "--evaluator", str(tmp_path / "evaluate.py"),
+        "--profile-manifest", str(tmp_path / "profile.json"),
+        "--isolation-manifest", str(tmp_path / "isolation.json"),
+        "--lima-config", str(tmp_path / "mission.yaml"),
+        "--feasibility-record", str(tmp_path / "feasibility.json"),
+        "--release-preflight", str(tmp_path / "release.json"),
+        "--factory-mission-root", str(tmp_path / ".factory/missions"),
+        "--source-exporter", str(tmp_path / "export_source.py"),
+        "--evaluator-lima-config", str(tmp_path / "evaluator.yaml"),
+        "--evaluator-vm-name", "evaluator-vm",
+        "--droid", str(tmp_path / "droid"),
+        "--plugin-root", str(tmp_path / "plugin"),
+        "--state-root", str(tmp_path / "private-state"),
+        "--factory-credential-file", str(tmp_path / "factory.env"),
+    ]
+    for role in ("orchestrator", "worker", "validator", "extractor", "probe"):
+        arguments.extend((f"--{role}-model", "model", f"--{role}-reasoning", "high"))
+
+    monkeypatch.setattr(
+        cli_module,
+        "load_private_factory_environment",
+        lambda _: {"FACTORY_API_KEY": "test-only-key"},
+    )
+
+    class InvalidRuntime:
+        def __init__(self, *_: object, **__: object) -> None:
+            raise cli_module.PreflightError("private state root is invalid")
+
+    monkeypatch.setattr(cli_module, "MissionRuntime", InvalidRuntime)
+
+    assert main(arguments) == 2
+    assert "preflight stopped" in capsys.readouterr().err
+
+
 def test_status_exit_contract_for_known_unknown_and_corrupt_runs(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

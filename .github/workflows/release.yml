@@ -77,5 +77,9 @@ jobs:
       - name: Verify clean wheel install
         run: |
           python -m venv /tmp/shadow-clean
-          /tmp/shadow-clean/bin/python -m pip install --disable-pip-version-check dist/*.whl
+          WHEEL="$(printf '%s\n' dist/*.whl)"
+          RELEASE_VERSION="$(python -c 'import importlib.metadata; print(importlib.metadata.version("shadow-mission"))')"
+          /tmp/shadow-clean/bin/python -m pip install --disable-pip-version-check "${WHEEL}[proof]"
+          /tmp/shadow-clean/bin/python ci/verify_release.py --tag "v${RELEASE_VERSION}"
           /tmp/shadow-clean/bin/shadow --help
+          /tmp/shadow-clean/bin/python demo/proof_bundle.py verify --help

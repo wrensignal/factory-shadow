@@ -219,7 +219,11 @@ def append_snapshot(journal: ReviewJournal, *findings: JournalFinding, active: b
     )
 
 
-def exchange_with_guidance(guidance_id: str) -> HookExchangeRecord:
+def exchange_with_guidance(
+    guidance_id: str,
+    *,
+    transition_ids: tuple[str, ...] = (),
+) -> HookExchangeRecord:
     envelope = HookEnvelope(
         provenance_status="hook_authenticated",
         redaction_status="clean",
@@ -245,11 +249,11 @@ def exchange_with_guidance(guidance_id: str) -> HookExchangeRecord:
         response_digest=hook_response_digest(
             response_body=body,
             guidance_ids=(guidance_id,),
-            transition_ids=(),
+            transition_ids=transition_ids,
             review_state=None,
         ),
         guidance_ids=(guidance_id,),
-        transition_ids=(),
+        transition_ids=transition_ids,
         decided_at=2,
     )
     return HookExchangeRecord(
@@ -284,7 +288,12 @@ def test_metrics_compute_escapes_precision_propagation_and_bound_deltas(
     metrics = compute_outcome_metrics(
         run_id=RUN_ID,
         journal_records=journal.records(),
-        exchanges=(),
+        exchanges=(
+            exchange_with_guidance(
+                "guidance-worker-a",
+                transition_ids=("transition-worker-a-delivered",),
+            ),
+        ),
         baseline_record=baseline,
         shadow_record=shadow,
     )
@@ -339,6 +348,25 @@ def test_mixed_target_states_leave_finding_as_escape(tmp_path: Path) -> None:
     assert metrics.conflict_escape_count.value == 1
 
 
+def test_metrics_withhold_precision_without_exact_delivery_transition(
+    tmp_path: Path,
+) -> None:
+    journal = ReviewJournal(tmp_path / "review.jsonl", run_id=RUN_ID)
+    append_delta(journal)
+
+    metrics = compute_outcome_metrics(
+        run_id=RUN_ID,
+        journal_records=journal.records(),
+        exchanges=(),
+        baseline_record=None,
+        shadow_record=run_record(usage={"status": "unavailable"}),
+    )
+
+    assert metrics.intervention_precision.status == "unavailable"
+    assert metrics.intervention_precision.reason == "guidance lineage is incomplete"
+    assert metrics.false_intervention_count.value == 0
+
+
 def test_metrics_accept_nonempty_exchange_guidance_lineage(tmp_path: Path) -> None:
     journal = ReviewJournal(tmp_path / "review.jsonl", run_id=RUN_ID)
 
@@ -364,7 +392,12 @@ def test_metrics_withhold_probe_metrics_without_a_verdict(tmp_path: Path) -> Non
         metrics = compute_outcome_metrics(
             run_id=RUN_ID,
             journal_records=journal.records(),
-            exchanges=(),
+            exchanges=(
+                exchange_with_guidance(
+                    "guidance-worker-a",
+                    transition_ids=("transition-worker-a-delivered",),
+                ),
+            ),
             baseline_record=None,
             shadow_record=run_record(usage={"status": "unavailable"}),
         )

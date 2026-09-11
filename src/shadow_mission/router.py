@@ -719,6 +719,7 @@ class InterventionRouter:
         if selected_keys is not None and selected_keys - routable_keys:
             raise InterventionPolicyError("selected delivery lacks a routed finding")
 
+        scope = self._blocking_scope()
         for finding in sorted(
             finding_values, key=lambda item: (item.dedup_key, item.finding_id)
         ):
@@ -821,7 +822,6 @@ class InterventionRouter:
                         records[intervention_id] = prior
                         transitions.append(prior.transition_history[-1].transition_id)
                     continue
-                scope = self._blocking_scope()
                 generation += 1
                 item = _new_intervention(
                     run_id=self.run_id,

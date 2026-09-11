@@ -25,7 +25,7 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from ci.verify_release import PRIVATE_PATH_PATTERNS, SECRET_PATTERNS
+from ci.verify_release import PRIVATE_PATH_PATTERNS, contains_secret
 from demo.compare import ComparisonError, compare
 from shadow_mission.correlation import (
     FactoryMissionCorrelationWrapper,
@@ -77,6 +77,8 @@ _DIGEST = re.compile(DIGEST_PATTERN)
 _MAX_MEMBER_BYTES = 64 << 20
 _MAX_BUNDLE_BYTES = 512 << 20
 _MAX_MEMBERS = 256
+_MAX_SOURCE_MEMBERS = 10_000
+_MAX_SOURCE_SCAN_BYTES = 64 << 20
 _SHADOW_INPUT_NAMES = (
     "run.json",
     "pre-evaluation-run.json",
@@ -317,9 +319,8 @@ def _scan_payload(
     for pattern in PRIVATE_PATH_PATTERNS:
         if pattern.search(payload):
             raise ProofBundleError(f"private path in bundle member: {name}")
-    for pattern in SECRET_PATTERNS:
-        if pattern.search(payload):
-            raise ProofBundleError(f"credential in bundle member: {name}")
+    if contains_secret(payload):
+        raise ProofBundleError(f"credential in bundle member: {name}")
     if excluded_identifier_hashes:
         for match in _TOKEN.finditer(payload):
             if (
@@ -359,9 +360,17 @@ def _scan_source_archive(
 ) -> None:
     try:
         with tarfile.open(path, mode="r:") as archive:
-            for member in archive.getmembers():
+            member_count = 0
+            total_bytes = 0
+            while member := archive.next():
+                member_count += 1
+                if member_count > _MAX_SOURCE_MEMBERS:
+                    raise ProofBundleError("source archive exceeds its member bound")
                 if not member.isfile():
                     continue
+                total_bytes += member.size
+                if total_bytes > _MAX_SOURCE_SCAN_BYTES:
+                    raise ProofBundleError("source archive exceeds its byte bound")
                 extracted = archive.extractfile(member)
                 if extracted is None:
                     raise ProofBundleError(f"source member is unreadable: {member.name}")
@@ -1920,6 +1929,7 @@ def _validate_public_derivation_bindings(
         relations = _public_mission_relations(correlation)
         seen_relations: dict[str, MissionRelation] = {}
         projected_sequences: list[int] = []
+        lineage_sequences: list[int] = []
         for record in review_records:
             ledger_sequence = getattr(record, "ledger_sequence", None)
             event_id = getattr(record, "event_id", None)
@@ -1977,6 +1987,7 @@ def _validate_public_derivation_bindings(
             ):
                 journal_router = record.delta.apply(journal_router)
                 if isinstance(record, InterventionLineageRecord):
+                    lineage_sequences.append(record.ledger_sequence)
                     assert exchange is not None
                     if (
                         event_deltas.get(record.ledger_sequence)
@@ -1987,11 +1998,16 @@ def _validate_public_derivation_bindings(
                         raise ProofBundleError(
                             "public intervention lineage differs"
                         )
-        if projected_sequences != list(
-            range(1, len(projected_sequences) + 1)
-        ):
+        expected_sequences = [
+            exchange.ledger_sequence for exchange in exchanges
+        ]
+        if projected_sequences != expected_sequences:
             raise ProofBundleError(
-                "public exchange projections are not contiguous"
+                "public exchange projection coverage differs"
+            )
+        if lineage_sequences != list(event_deltas):
+            raise ProofBundleError(
+                "public intervention lineage coverage differs"
             )
     except ProofBundleError:
         raise

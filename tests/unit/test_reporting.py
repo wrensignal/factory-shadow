@@ -465,7 +465,12 @@ def report_intervention(
     )
 
 
-def append_mixed_finding(journal: ReviewJournal, run_id: str) -> None:
+def append_mixed_finding(
+    journal: ReviewJournal,
+    run_id: str,
+    *,
+    all_resolved: bool = False,
+) -> None:
     interventions = (
         report_intervention(
             run_id,
@@ -475,7 +480,7 @@ def append_mixed_finding(journal: ReviewJournal, run_id: str) -> None:
         report_intervention(
             run_id,
             target_session="worker-b",
-            resolved=False,
+            resolved=all_resolved,
         ),
     )
     base = InterventionRouterState.empty(run_id)

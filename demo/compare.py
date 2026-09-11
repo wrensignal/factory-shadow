@@ -204,16 +204,24 @@ def _has_seeded_repair_chain(
     if stage != 3:
         return False
     correction_sources: set[str] = set()
+    expected_digests = set(intervention.correction_evidence_digests)
+    observed_digests: set[str] = set()
     for evidence_id in intervention.correction_evidence_ids:
         record = evidence.get(evidence_id)
         if (
             record is None
+            or record.run_id != intervention.run_id
             or record.intervention_id != intervention.intervention_id
             or record.kind != "target_correction"
+            or record.digest not in expected_digests
         ):
             return False
         correction_sources.add(record.source)
-    return _CORRECTION_EVIDENCE_SOURCES <= correction_sources
+        observed_digests.add(record.digest)
+    return (
+        observed_digests == expected_digests
+        and _CORRECTION_EVIDENCE_SOURCES <= correction_sources
+    )
 
 
 def _seeded_repair_evidence(
@@ -257,7 +265,9 @@ def _seeded_repair_evidence(
         evidence = _report_evidence(report)
     except ComparisonError as error:
         raise chain_error(str(error)) from error
-    if not any(
+    if any(key in report.unresolved_risks for key in finding_keys):
+        raise chain_error("seeded conflict remains in unresolved risks")
+    if not all(
         all(
             _has_seeded_repair_chain(intervention, evidence)
             for intervention in intervention_groups[finding_key]
@@ -267,8 +277,6 @@ def _seeded_repair_evidence(
         raise chain_error(
             "seeded conflict lacks delivered source-and-test repair evidence"
         )
-    if any(key in report.unresolved_risks for key in finding_keys):
-        raise chain_error("seeded conflict remains in unresolved risks")
     return closed_finding_keys, closed_intervention_ids
 
 

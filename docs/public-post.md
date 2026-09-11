@@ -1,6 +1,7 @@
-# Factory Guild public post
+# The Factory Guild public post
 
-Publish this text with the release page as its link preview.
+Use this draft only after the `v0.1.0b5` release receives publication approval.
+Use the release page as its link preview.
 A short demonstration clip is optional.
 
 ## Post copy
@@ -28,7 +29,12 @@ Usage and cost remain unavailable.
 
 Repository: https://github.com/WrenSignal/factory-shadow
 
-Release and offline proof: https://github.com/WrenSignal/factory-shadow/releases/tag/v0.1.0b4
+Release candidate: https://github.com/WrenSignal/factory-shadow/releases/tag/v0.1.0b5
+
+The [published `v0.1.0b4` release](https://github.com/WrenSignal/factory-shadow/releases/tag/v0.1.0b4) retains the historical proof assets.
+
+Reviewers can install `shadow-mission[proof]` from the tagged source.
+The [offline reviewer path](reproducibility.md) needs no Factory plugin installation.
 
 @FactoryAI
 

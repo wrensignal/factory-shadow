@@ -23,6 +23,7 @@ from shadow_mission.protocol import (
 
 
 def test_unexpected_post_tool_failure_does_not_break_factory(
+    capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
@@ -33,7 +34,7 @@ def test_unexpected_post_tool_failure_does_not_break_factory(
     monkeypatch.setattr(hook_runtime, "_ACTIVE_HOOK_EVENT_NAME", "PostToolUse")
 
     assert hook_runtime.main() == 0
-
+    assert capsys.readouterr().out == ""
 
 def test_unexpected_completion_failure_blocks_fail_closed(
     monkeypatch: pytest.MonkeyPatch,

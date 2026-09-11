@@ -153,6 +153,48 @@ def test_event_auth_rejects_replay_cross_run_and_forgery(tmp_path: Path) -> None
         EventAuthenticator(secret, descriptor).verify(forged, body, now=1_700_000_011)
 
 
+def test_event_auth_bounds_identifiers_and_can_discard_rejected_events(
+    tmp_path: Path,
+) -> None:
+    secret = generate_run_secret()
+    descriptor = create_descriptor(
+        tmp_path / "descriptor.json", secret, **descriptor_args(tmp_path)
+    )
+    authenticator = EventAuthenticator(secret, descriptor)
+    body = b'{"event_id":"event-rejected","run_id":"run-alpha"}'
+    headers = sign_event_headers(
+        body,
+        secret,
+        descriptor,
+        event_id="event-rejected",
+        now=1_700_000_010,
+        nonce="nonce-rejected",
+    )
+
+    assert authenticator.verify(headers, body, now=1_700_000_011) == "event-rejected"
+    authenticator.discard("event-rejected", body)
+    assert authenticator.verify(headers, body, now=1_700_000_011) == "event-rejected"
+
+    oversized_id = "e" * 161
+    oversized_body = json.dumps(
+        {"event_id": oversized_id, "run_id": "run-alpha"}
+    ).encode()
+    oversized_headers = sign_event_headers(
+        oversized_body,
+        secret,
+        descriptor,
+        event_id=oversized_id,
+        now=1_700_000_012,
+        nonce="nonce-oversized",
+    )
+    with pytest.raises(AuthenticationError, match="event ID"):
+        authenticator.verify(
+            oversized_headers,
+            oversized_body,
+            now=1_700_000_012,
+        )
+
+
 def test_latch_binds_run_target_generation_and_expiry(tmp_path: Path) -> None:
     secret = generate_run_secret()
     descriptor = create_descriptor(

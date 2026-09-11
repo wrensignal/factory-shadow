@@ -305,19 +305,21 @@ def _terminate_interactive_process_group(
     timeout_seconds: float = 5.0,
 ) -> None:
     deadline = time.monotonic() + timeout_seconds
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except OSError:
-        pass
+    if process.poll() is None:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except OSError:
+            pass
     term_deadline = time.monotonic() + max(
         0.0,
         (deadline - time.monotonic()) / 2,
     )
     _wait_interactive_process_group(process, term_deadline)
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except OSError:
-        pass
+    if process.returncode is None:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except OSError:
+            pass
     if not _wait_interactive_process_group(process, deadline):
         raise LiveGateError("interactive Droid process group did not stop")
 
@@ -1980,14 +1982,6 @@ def validate_live_preflight(
     }
 
 
-def _require_true_controls(
-    value: object, required_fields: set[str], group_name: str
-) -> None:
-    if not isinstance(value, Mapping) or set(value) != required_fields:
-        raise LiveGateError(f"{group_name} fields differ from the contract")
-    for field_name in sorted(required_fields):
-        if value[field_name] is not True:
-            raise LiveGateError(f"{group_name}.{field_name} is not proven")
 
 
 def _scan_forbidden(value: object, path: str = "$") -> None:

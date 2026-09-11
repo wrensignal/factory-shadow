@@ -18,14 +18,24 @@ from typing import Iterable, Sequence
 
 MAX_FILES = 10_000
 MAX_BYTES = 64 << 20
+MAX_ARCHIVE_BYTES = MAX_BYTES + MAX_FILES * 2048 + (1 << 20)
 _EXCLUDED = frozenset({".git", ".shadow-mission", "__pycache__"})
 _MAX_FORBIDDEN_VALUES = 64
 _MAX_FORBIDDEN_VALUE_BYTES = 4096
 _MAX_FORBIDDEN_INPUT_BYTES = 512 << 10
 _CREDENTIAL_NAME = re.compile(
-    r"^(?:\.env(?:\..*)?|\.aws|\.ssh|\.npmrc|\.pypirc|credentials?|secrets?|"
-    r"id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?|.*(?:api[_-]?key|access[_-]?token).*)$",
+    r"^(?:\.env(?:\..*)?|\.aws|\.docker|\.git-credentials|\.gnupg|\.kube|"
+    r"\.ssh|\.netrc|\.npmrc|\.pypirc|gcloud|keychains?|"
+    r"credentials?(?:\..*)?|secrets?(?:\..*)?|"
+    r"id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?|"
+    r".*(?:api[_-]?key|access[_-]?(?:key|token)|client[_-]?secret|"
+    r"service[_-]?account|credential).*)$",
     re.IGNORECASE,
+)
+
+_CREDENTIAL_PATHS = (
+    (".config", "gh"),
+    (".local", "share", "keyrings"),
 )
 
 
@@ -51,6 +61,13 @@ def safe_relative(path: Path, root: Path) -> str:
     pure = PurePosixPath(relative.as_posix())
     if pure.is_absolute() or any(part in {"", ".", ".."} for part in pure.parts):
         raise ExportError("source path is unsafe")
+    normalized_parts = tuple(part.casefold() for part in pure.parts)
+    if any(
+        normalized_parts[index : index + len(denied)] == denied
+        for denied in _CREDENTIAL_PATHS
+        for index in range(len(normalized_parts) - len(denied) + 1)
+    ):
+        raise ExportError("source path enters a credential store")
     if any(part in _EXCLUDED for part in pure.parts):
         raise ExportError("source path enters private state")
     if any(_CREDENTIAL_NAME.fullmatch(part) for part in pure.parts):
@@ -214,6 +231,8 @@ def atomic_outputs(root: Path, archive_path: Path, manifest_path: Path, canaries
         temporary_archive = temporary_root / "final-source.tar"
         temporary_manifest = temporary_root / "final-source-manifest.json"
         write_archive(root, temporary_archive, manifest)
+        if temporary_archive.stat().st_size > MAX_ARCHIVE_BYTES:
+            raise ExportError("source archive exceeds its byte limit")
         temporary_manifest.write_bytes(canonical_json(manifest) + b"\n")
         for output in (temporary_archive, temporary_manifest):
             with output.open("rb") as handle:

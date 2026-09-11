@@ -5,7 +5,9 @@ The public checks need no Factory account, credential, approval, model call, or 
 
 ## Evidence sources
 
-The GitHub release for `v0.1.0b4` publishes these evidence sources:
+The local release candidate is `0.1.0b5`.
+It uses the unchanged historical evidence from the published `v0.1.0b4` release.
+That release provides these evidence sources:
 
 - `pair-summary-final.json` contains the frozen aggregate record;
 - `incomplete-pairs.json` records pairs 54 and 57;
@@ -24,28 +26,42 @@ Both bundles passed the offline verifier before publication.
 The aggregate file SHA-256 is `63c9283c3a269f2bbf77cdf35e602d2c1f49067781acda2bafcc757e3b6e3250`.
 The incomplete record SHA-256 is `84a13287bd07bae58fbb036b60e87c603195325f6c97607589710504ffedb4c0`.
 
-## Get the tagged source
+## Set up the offline reviewer
+
+The commands below target `v0.1.0b5` after approved publication.
+The local candidate does not create that tag.
 
 ```sh
 git clone https://github.com/WrenSignal/factory-shadow.git
 cd factory-shadow
-git checkout --detach v0.1.0b4
+git checkout --detach v0.1.0b5
 python3 -m venv .venv
-.venv/bin/python -m pip install --disable-pip-version-check -e '.[dev]'
+.venv/bin/python -m pip install --disable-pip-version-check \
+  'shadow-mission[proof] @ git+https://github.com/WrenSignal/factory-shadow.git@v0.1.0b5'
+.venv/bin/python demo/proof_bundle.py verify --help
 ```
 
 `pyproject.toml` requires Python 3.10 or later.
+The `proof` extra supplies PyYAML without the development tools.
+Keep the tagged source for `demo/proof_bundle.py` and `ci/verify_release.py`.
+The wheel does not include these scripts.
+The reviewer path needs no Factory plugin installation.
 
 ## Run source checks without Factory
 
+Install the development extra only when you need source tests and build tools.
+
 ```sh
+.venv/bin/python -m pip install --disable-pip-version-check -e '.[dev]'
 .venv/bin/python -m pytest tests/unit tests/integration
-.venv/bin/python ci/verify_release.py --tag v0.1.0b4
+.venv/bin/python ci/verify_release.py --tag v0.1.0b5
 ```
 
 These commands make no Factory, model, Lima, or paid Mission call.
 The release verifier checks package metadata, plugin metadata, Marketplace metadata, hook bindings, and Lima manifests.
-It also scans tracked files for defined private path patterns.
+It also scans tracked and untracked release files for defined private path patterns.
+The clean-install test checks installed package identity and the offline proof entry path.
+It builds from local source without network access and reuses the test environment's dependencies.
 The verifier writes no success message.
 
 This release does not publish a volatile test count.
@@ -56,16 +72,26 @@ The command exit status is the check result.
 ```sh
 .venv/bin/python -m build
 .venv/bin/python -m twine check dist/*
-.venv/bin/python ci/verify_release.py --tag v0.1.0b4 --dist dist
+.venv/bin/python ci/verify_release.py --tag v0.1.0b5 --dist dist
 
 WHEEL_VENV="$(mktemp -d)/venv"
 .venv/bin/python -m venv "$WHEEL_VENV"
-"$WHEEL_VENV/bin/python" -m pip install --disable-pip-version-check dist/*.whl
+WHEEL="$(printf '%s\n' dist/*.whl)"
+"$WHEEL_VENV/bin/python" -m pip install --disable-pip-version-check "${WHEEL}[proof]"
+"$WHEEL_VENV/bin/python" ci/verify_release.py --tag v0.1.0b5
 "$WHEEL_VENV/bin/shadow" --help
+"$WHEEL_VENV/bin/python" demo/proof_bundle.py verify --help
 ```
 
 The distribution verifier requires one wheel and one source archive.
-It rejects unsafe archive paths, linked source members, private paths, and common secret forms.
+Both archives must identify `shadow-mission` at the selected release version in their package metadata.
+The verifier rejects missing or ambiguous metadata.
+It also rejects unsafe archive paths, linked source members, private paths, and common secret forms.
+The clean wheel check validates installed identity and imports the offline proof entry path.
+It needs no Factory credential, model call, Lima, or paid Mission.
+
+Stop if `dist` contains archives from another release.
+Build in a fresh disposable checkout after approval instead of deleting or mixing existing archives.
 
 ## Download the release evidence
 
@@ -163,12 +189,12 @@ These commands use the official Factory Marketplace interface.
 They change the reviewer's Factory plugin state.
 
 ```sh
-droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b4'
-droid plugin install shadow-mission@factory-shadow@v0.1.0b4 --scope user
+droid plugin marketplace add 'https://github.com/WrenSignal/factory-shadow#v0.1.0b5'
+droid plugin install shadow-mission@factory-shadow@v0.1.0b5 --scope user
 ```
 
 The catalog name is `factory-shadow`.
-The tagged registration ID is `factory-shadow@v0.1.0b4`.
+The tagged registration ID is `factory-shadow@v0.1.0b5` after publication.
 The plugin name is `shadow-mission`.
 The catalog source is the repository root.
 
@@ -185,7 +211,9 @@ It also needs the exact pinned Factory and Lima boundaries.
 `pyproject.toml` pins Droid SDK `0.2.0`.
 The files under `ops/lima/` pin Lima `2.2.0` and image digests.
 The Factory plugin and live protocol use the stable `0.1.0` base.
-The `0.1.0b4` Python distribution does not authorize a new live Mission.
+The `0.1.0b5` Python distribution does not authorize a new live Mission.
+
+This candidate does not establish compatibility with Droid `0.209.0` or droid-sdk `0.4.0`.
 A later live candidate must align every runtime and preflight binding before re-sealing.
 
 Do not copy a Factory credential into a repository or Mission checkout.
@@ -203,11 +231,17 @@ An external Ed25519 signer authorizes that request outside the repository.
 Its `apply` command requires a staged offline dry run before any canonical write.
 Its `verify` command checks the public signature and receipt offline.
 
-The preview re-seal completed with request digest
+The historical preview re-seal completed with request digest
 `cff3475fd3ca57bb5d73f9ca4f33edc90916a2bdd6d25ae57d6f8114fe8814a7`.
 Its verified receipt digest is
 `5769969d8694b010e32354af14ae4ec6b287e94fc4d82f041c1cc390a3b04121`.
 
+That receipt does not re-seal the changed `0.1.0b5` candidate.
+Version `0.1.0b5` retains the valid historical `v0.1.0b4` fixture and pin.
+They do not describe or authorize the `0.1.0b5` plugin artifact.
+The current-artifact dry run rejects this historical fixture as stale.
+
+No new re-seal forms part of this update.
 Never hand-edit the sealed fixture or regenerate its pin.
 Re-sealing consumes no live run.
 It does not change historical proof bundle results.

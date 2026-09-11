@@ -10,7 +10,7 @@ import stat
 import tarfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Mapping, Sequence
+from typing import Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -18,16 +18,30 @@ from .protocol import DIGEST_PATTERN, canonical_json
 
 MAX_SOURCE_FILES = 10_000
 MAX_SOURCE_BYTES = 64 << 20
+MAX_SOURCE_ARCHIVE_BYTES = (
+    MAX_SOURCE_BYTES + MAX_SOURCE_FILES * 2048 + (1 << 20)
+)
+MAX_SOURCE_MANIFEST_BYTES = 8 << 20
 _EXCLUDED_COMPONENTS = frozenset({".git", ".shadow-mission", "__pycache__"})
 _CREDENTIAL_NAME = re.compile(
-    r"^(?:\.env(?:\..*)?|\.aws|\.ssh|\.npmrc|\.pypirc|credentials?|secrets?|"
-    r"id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?|.*(?:api[_-]?key|access[_-]?token).*)$",
+    r"^(?:\.env(?:\..*)?|\.aws|\.docker|\.git-credentials|\.gnupg|\.kube|"
+    r"\.ssh|\.netrc|\.npmrc|\.pypirc|gcloud|keychains?|"
+    r"credentials?(?:\..*)?|secrets?(?:\..*)?|"
+    r"id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?|"
+    r".*(?:api[_-]?key|access[_-]?(?:key|token)|client[_-]?secret|"
+    r"service[_-]?account|credential).*)$",
     re.IGNORECASE,
 )
 
 
 class SourceArchiveError(ValueError):
     """A final-source archive or manifest violates its sealed contract."""
+
+
+_CREDENTIAL_PATHS = (
+    (".config", "gh"),
+    (".local", "share", "keyrings"),
+)
 
 
 class SourceFileRecord(BaseModel):
@@ -92,6 +106,13 @@ def validate_member_name(name: str) -> PurePosixPath:
         raise SourceArchiveError("source member enters a private directory")
     if any(_CREDENTIAL_NAME.fullmatch(part) for part in path.parts):
         raise SourceArchiveError("source member has a credential-like name")
+    normalized_parts = tuple(part.casefold() for part in path.parts)
+    if any(
+        normalized_parts[index : index + len(denied)] == denied
+        for denied in _CREDENTIAL_PATHS
+        for index in range(len(normalized_parts) - len(denied) + 1)
+    ):
+        raise SourceArchiveError("source member enters a credential store")
     return path
 
 
@@ -121,6 +142,8 @@ def load_manifest(path: Path) -> FinalSourceManifest:
         metadata = path.lstat()
         if path.is_symlink() or not stat.S_ISREG(metadata.st_mode):
             raise SourceArchiveError("source manifest is not a regular file")
+        if metadata.st_size > MAX_SOURCE_MANIFEST_BYTES:
+            raise SourceArchiveError("source manifest exceeds its byte limit")
         payload = path.read_bytes()
         value = json.loads(payload)
         if not isinstance(value, Mapping) or canonical_json(value) + b"\n" != payload:
@@ -145,19 +168,24 @@ def validate_source_archive(
         metadata = archive_path.lstat()
         if archive_path.is_symlink() or not stat.S_ISREG(metadata.st_mode):
             raise SourceArchiveError("source archive is not a regular file")
+        if metadata.st_size > MAX_SOURCE_ARCHIVE_BYTES:
+            raise SourceArchiveError("source archive exceeds its byte limit")
     except OSError as error:
         raise SourceArchiveError("cannot inspect source archive") from error
     expected = {item.path: item for item in manifest.files}
     observed: set[str] = set()
     total_bytes = 0
+    overlap = max((len(canary) for canary in secret_canaries), default=1) - 1
     try:
         with tarfile.open(archive_path, mode="r:") as archive:
-            members = archive.getmembers()
+            members: list[tarfile.TarInfo] = []
+            while member := archive.next():
+                members.append(member)
+                if len(members) > MAX_SOURCE_FILES:
+                    raise SourceArchiveError("source archive exceeds its file bound")
             names = [member.name for member in members]
             if names != sorted(names) or len(names) != len(set(names)):
                 raise SourceArchiveError("source archive members are not sorted and unique")
-            if len(names) > MAX_SOURCE_FILES:
-                raise SourceArchiveError("source archive exceeds its file bound")
             for member in members:
                 validate_member_name(member.name)
                 if not member.isfile() or member.linkname:
@@ -174,7 +202,6 @@ def validate_source_archive(
                 if extracted is None:
                     raise SourceArchiveError("source archive member cannot be read")
                 digest = hashlib.sha256()
-                overlap = max((len(canary) for canary in secret_canaries), default=1) - 1
                 prior = b""
                 while True:
                     chunk = extracted.read(1 << 20)

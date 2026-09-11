@@ -83,7 +83,7 @@ from .rules import (
     RiskCategory,
     normalize_locator,
 )
-from .storage import EventLedger, ResponsePlan, review_state_component
+from .storage import ResponsePlan, review_state_component
 from .redaction import sanitize_value
 from .transcript import TranscriptError, TranscriptObservation, TranscriptReader
 
@@ -292,6 +292,8 @@ class MissionReviewController:
         self._max_ephemeral_bytes = max_ephemeral_bytes
         self._raw_contexts: dict[str, _RawTranscriptContext] = {}
         self._raw_context_bytes = 0
+        self._session_transcripts: dict[str, str] = {}
+        self._transcript_sessions: dict[str, str] = {}
         self._pending_order: dict[int, tuple[_ProjectionItem, bytes]] = {}
         self._pending_order_bytes = 0
         self._next_intake_sequence = 1
@@ -327,26 +329,6 @@ class MissionReviewController:
         self._replayed = False
         self._journal_requires_replay = bool(self.journal.records())
 
-    @classmethod
-    def from_ledger(
-        cls,
-        ledger: EventLedger,
-        **dependencies: object,
-    ) -> "MissionReviewController":
-        """Rebuild from the event ledger and journal, then attach post-fsync intake."""
-
-        supplied_run_id = dependencies.pop("run_id", ledger.run_id)
-        supplied_run_dir = dependencies.pop("run_dir", ledger.run_dir)
-        if supplied_run_id != ledger.run_id:
-            raise ValueError("review run differs from the event ledger")
-        controller = cls(
-            run_id=ledger.run_id,
-            run_dir=Path(supplied_run_dir),
-            **dependencies,
-        )
-        controller.replay(ledger.exchanges())
-        ledger.add_after_append(controller.after_append)
-        return controller
 
     @property
     def releasable(self) -> bool:
@@ -392,15 +374,6 @@ class MissionReviewController:
         with self._state_lock:
             return self._boundary_disabled
 
-    @property
-    def pending_items(self) -> int:
-        with self._intake_lock:
-            return self._queue.item_count + len(self._pending_order)
-
-    @property
-    def pending_bytes(self) -> int:
-        with self._intake_lock:
-            return self._queue.byte_count + self._pending_order_bytes
 
     def _session_projection_pending(self, session_alias: str) -> bool:
         with self._intake_lock:
@@ -412,9 +385,6 @@ class MissionReviewController:
         with self._state_lock:
             return self._findings
 
-    def assessments(self) -> tuple[ProbeAssessment, ...]:
-        with self._state_lock:
-            return tuple(self._assessments[key] for key in sorted(self._assessments))
 
     def cursor_offsets(self) -> dict[str, int]:
         with self._state_lock:
@@ -449,6 +419,24 @@ class MissionReviewController:
                     self._mark_degraded("ephemeral_context_conflict")
                     raise MissionReviewError("event raw transcript context changed")
                 return
+            known_transcript = self._session_transcripts.get(
+                envelope.session_alias
+            )
+            known_session = self._transcript_sessions.get(
+                envelope.transcript_alias
+            )
+            if (
+                known_transcript not in {None, envelope.transcript_alias}
+                or known_session not in {None, envelope.session_alias}
+            ):
+                self._mark_degraded("transcript_identity_conflict")
+                raise MissionReviewError("transcript identity changed")
+            self._session_transcripts[envelope.session_alias] = (
+                envelope.transcript_alias
+            )
+            self._transcript_sessions[envelope.transcript_alias] = (
+                envelope.session_alias
+            )
             if (
                 len(self._raw_contexts) >= self._max_ephemeral_items
                 or self._raw_context_bytes + encoded_size > self._max_ephemeral_bytes
